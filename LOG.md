@@ -1,0 +1,1 @@
+2026-10-08: just kicking the tires. double the epochs. Expect to beat baseline MNIST.
