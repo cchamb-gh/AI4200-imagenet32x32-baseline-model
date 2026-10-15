@@ -33,12 +33,13 @@
 
 
 
-### Change N - NNNNNNNNN - 2026-10-NN
+### Change 2 - mnist and cifar - 2026-10-15
 
-**Change:** 
+**Change:** switch to ReLU activations for the hidden blocks and update initialization to He Kaming. I'm going to use the Week 5.1
+colab notebook that gives the LayerNormBlock template with ReLU and He Kaming initialization.
 
-**Why:** 
+**Why:** in a future change, I will attempt adding depth to the network. ReLU performs better for deep networks, so this is an intermediate step.
 
-**Expected:** 
+**Expected:** I don't expect to see much change in accuracy. Since I'm not changing depth yet, I expect training time to decrease a little since ReLU activation is computationally cheap.
 
 **Result:**

@@ -1,5 +1,7 @@
+import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 # Each task differs only in its input size and its number of classes.
@@ -24,9 +26,24 @@ class Block(nn.Module):
         self.fc1 = nn.Linear(width, hidden)   # expand:  width  -> hidden
         self.fc2 = nn.Linear(hidden, width)   # project: hidden -> width
 
+        # --- From the LayerNormBlock template in the Week 5.1 Colab in class ----
+        # --- 
+        # He init. fc1 reds the normalized stream (not a ReLU output): variance 1 / fan_in
+        nn.init.normal_(self.fc1.weight, mean=0.0, std=math.sqrt(1.0 / width))
+        nn.init.zeros_(self.fc1.bias)
+
+        # He init. fc2 reads a ReLU output: variance 2 / fan_in
+        nn.init.normal_(self.fc2.weight, mean=0.0, std=math.sqrt(2.0 / hidden))
+        nn.init.zeros_(self.fc2.bias)
+
+
     def forward(self, x):
-        h = self.fc2(torch.tanh(self.fc1(self.norm(x))))
-        return x + h                          # skip connection: add the input back
+        branch = self.norm(x)
+        branch = self.fc1(branch)
+        branch = F.relu(branch)
+        branch = self.fc2(branch)
+        
+        return x + branch                          # skip connection: add the input back
 
 
 class ResidualMLP(nn.Module):
@@ -61,7 +78,7 @@ class ResidualMLP(nn.Module):
                 nn.init.xavier_normal_(layer.weight)
                 nn.init.zeros_(layer.bias)
 
-    def forward(self, x, return_stream=True):
+    def forward(self, x, return_stream=False):
         """Training forward pass. Returns raw logits (no softmax).
 
         nn.CrossEntropyLoss applies the softmax itself, so training uses logits.
