@@ -70,3 +70,25 @@ def predict(model, X):
     # Predict in chunks so a large test set does not run out of GPU memory.
     chunks = [model.predict(X[i:i + 1024].to(device)).cpu() for i in range(0, len(X), 1024)]
     return torch.cat(chunks)
+
+def diag_input_variance(task, X_train, y_train, seed=0, device="cuda"):    
+    torch.manual_seed(seed)                   # makes the run reproducible
+    model = ResidualMLP(**TASKS[task]).to(device)
+    X_fixed = X_train[:256]
+    X_batch = prepare(X_fixed).to(device)
+
+    # # 2. Wrap the data so we can loop over shuffled mini-batches.
+    # dataset = TensorDataset(prepare(X_train), torch.as_tensor(y_train).long())
+    # loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+
+    # # 3. Choose the loss and the optimizer.
+    # loss_fn = nn.CrossEntropyLoss()           # expects raw logits
+    # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+
+    # 4. The training loop.
+    model.train()
+
+    logits, stream = model(X_batch)           # forward pass
+    variances = [layer_act.var().item() for layer_act in stream]
+    means = [layer_act.mean().item() for layer_act in stream]
+    pass
