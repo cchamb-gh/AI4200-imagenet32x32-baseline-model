@@ -53,4 +53,4 @@ colab notebook that gives the LayerNormBlock template with ReLU and He Kaming in
 
 **Expected:** I expect my MNIST-specific FFN with 13 hidden layers will improve upon the accuracy from the single hidden layer example from the Week 7.2 notes. It's a simple network.
 
-**Result**: 
+**Result**: The 13-layer network very slightly improved upon the 1-layer network from the notes. going from 97.38% to 97.63% accuracy. Basically a wash at the cost of additional training time and code complexity. Not worth the effort. But it was successful in testing the MNIST-specific model so that I can continue running with task-specific models on the HPC.
