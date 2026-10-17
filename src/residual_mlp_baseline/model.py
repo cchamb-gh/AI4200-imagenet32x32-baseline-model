@@ -72,11 +72,12 @@ class ResidualMLP(nn.Module):
         self.head_fc1 = nn.Linear(width, hidden)
         self.head_fc2 = nn.Linear(hidden, num_classes)
 
-        # Xavier (Glorot) initialization for every linear layer, zero biases.
-        for layer in self.modules():
-            if isinstance(layer, nn.Linear):
-                nn.init.xavier_normal_(layer.weight)
-                nn.init.zeros_(layer.bias)
+
+        # # Xavier (Glorot) initialization for every linear layer, zero biases.
+        # for layer in self.modules():
+        #     if isinstance(layer, nn.Linear):
+        #         nn.init.xavier_normal_(layer.weight)
+        #         nn.init.zeros_(layer.bias)
 
     def forward(self, x, return_stream=False):
         """Training forward pass. Returns raw logits (no softmax).
@@ -90,7 +91,17 @@ class ResidualMLP(nn.Module):
             x = block(x)
             if return_stream:
                 stream.append(x)
-        x = self.head_fc2(torch.tanh(self.head_fc1(self.head_norm(x))))
+        # the head block
+        # clay: by the time we get here in the original implementation, variance has grown to be over 30
+        #   that's noteworthy but expected. 
+        #   Therefore, we'll scale using the LayerNorm
+        x = self.head_norm(x)
+        x = self.head_fc1(x)
+        #x = torch.tanh(x) # tanh gave 47.28% accuracy in baseline
+        # x = torch.relu(x) # relu gave 50.18% accuracy
+        x = torch.sigmoid(x)
+        x = self.head_fc2(x)
+        # x = self.head_fc2(torch.tanh(self.head_fc1(self.head_norm(x))))
         if return_stream:
             return x, stream
         return x

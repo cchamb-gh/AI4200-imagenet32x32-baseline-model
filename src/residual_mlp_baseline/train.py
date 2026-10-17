@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from .model import TASKS, ResidualMLP
+from .mnist_model import MNIST_Model
 
 
 # Baseline settings. Deliberately plain so they are easy to beat:
@@ -32,7 +33,13 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
     torch.manual_seed(seed)                   # makes the run reproducible
 
     # 1. Build the model for this task. Only input size and class count differ.
-    model = ResidualMLP(**TASKS[task]).to(device)
+    if task == "mnist":
+    #if task == "foo":
+        model = MNIST_Model(**TASKS[task], depth=13, width=256, hidden=256).to(device)
+        optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    else:
+        model = ResidualMLP(**TASKS[task]).to(device)
+        optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
     # 2. Wrap the data so we can loop over shuffled mini-batches.
     dataset = TensorDataset(prepare(X_train), torch.as_tensor(y_train).long())
@@ -40,7 +47,6 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
 
     # 3. Choose the loss and the optimizer.
     loss_fn = nn.CrossEntropyLoss()           # expects raw logits
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
     # 4. The training loop.
     model.train()
