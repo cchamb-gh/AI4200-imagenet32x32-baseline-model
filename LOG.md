@@ -56,7 +56,7 @@ colab notebook that gives the LayerNormBlock template with ReLU and He Kaming in
 **Result**: The 13-layer network very slightly improved upon the 1-layer network from the notes. going from 97.38% to 97.63% accuracy. Basically a wash at the cost of additional training time and code complexity. Not worth the effort. But it was successful in testing the MNIST-specific model so that I can continue running with task-specific models on the HPC.
 
 
-### Change 4 - mnist - 2026-10-19 #
+### Change 4 - mnist - 2026-10-19 #363ab7dd
 
 **Change:** Fix a bug with my simple FFN MLP for MNIST. It occurred to me that my layers had an additional layer
 leftover from when I adapted them from residual MLP to feed forward MLP. Each layer was linear -> tanh -> linear, but it should have just been linear -> tanh.
@@ -66,7 +66,8 @@ Also, add more infrastructure support for task specific configuration. Now the t
 
 **Expected:** The bug was causing me to have twice as many linear layers as requested, which would have make any deep-network problems show up earlier. Depth 10 would have actually had 20 linear layers, for example. I don't expect a big change in loss or accuracy.
 
-**Result:** 
+**Result:** Training time decreased in half. It was already very quick since this uses simple layers, but it went from 0.6 to 0.3 minutes of training time. The bug fix removed 13 layers, so we just had a total of 13 hidden layers remaining. Accuracy dropped less than a percent to 97.04% for MNIST. That tells me that the extra layers really weren't contributing much.
+2026-10-19 15:20,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,mnist,0.9704,0.3,0
 
 
 
