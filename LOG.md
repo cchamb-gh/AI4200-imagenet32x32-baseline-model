@@ -98,7 +98,7 @@ MNIST. That tells me that the extra layers really weren't contributing much. 202
 15:20,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,mnist,0.9704,0.3,0
 
 
-### Change 5 - mnist, cifar10, imagenet32 - 2026-10-19 - #
+### Change 5 - mnist, cifar10, imagenet32 - 2026-10-19 - #519bc29e
 
 **Change:** Specify an SGD optimizer momentum of 0.9 for all tasks.
 
@@ -109,7 +109,14 @@ local minima, and it should give faster convergence
 should improve for all tasks since it should step over any local minima that we were hitting
 previously.
 
-**Result:**
+**Result:** 
+Pracitically no change in MNIST. I thought it would be a slight improvement, but maybe we're already
+close to optimum convergence and getting no benefit from momentum. CIFAR accuracy improved 5%, so
+that's a nice, big jump. Bigger than I expected. Imagenet accuracy also increased but only by 1%.
+
+2026-10-19 16:05,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,mnist,0.9705,0.3,0
+2026-10-19 16:06,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5426,1.4,0
+2026-10-19 16:19,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.0889,12.5,0
 
 
 
