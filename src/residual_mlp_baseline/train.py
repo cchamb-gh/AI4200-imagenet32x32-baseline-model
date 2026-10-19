@@ -12,7 +12,6 @@ LEARNING_RATE = 0.05
 BATCH_SIZE = 256
 EPOCHS = {"mnist": 20, "cifar10": 30, "imagenet32": 10}
 
-
 def prepare(X):
     """Convert uint8 images (0-255) to floats in roughly [-1, 1]."""
     return (torch.as_tensor(X).float() / 255.0 - 0.5) / 0.5
@@ -32,23 +31,19 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
     """Build a new model and train it from scratch. Returns the trained model."""
     torch.manual_seed(seed)                   # makes the run reproducible
 
-    # 1. Build the model for this task. Only input size and class count differ.
-    if task == "mnist":
-    #if task == "foo":
-        model = MNIST_Model(**TASKS[task], depth=13, width=256, hidden=256).to(device)
-        optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
-    else:
-        model = ResidualMLP(**TASKS[task]).to(device)
-        optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
-
-    # 2. Wrap the data so we can loop over shuffled mini-batches.
+    # Wrap the data so we can loop over shuffled mini-batches.
     dataset = TensorDataset(prepare(X_train), torch.as_tensor(y_train).long())
-    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-    # 3. Choose the loss and the optimizer.
-    loss_fn = nn.CrossEntropyLoss()           # expects raw logits
+    # build task-specific models and optimizers
+    if task == "mnist":
+        model, optimizer, loader, loss_fn = train_mnist(dataset, device)
+    elif task == "cifar10":
+        model, optimizer, loader, loss_fn = train_cifar10(dataset, device)
+    else:
+        model, optimizer, loader, loss_fn = train_imagenet32(dataset, device)
+            
 
-    # 4. The training loop.
+    # The training loop.
     model.train()
     for epoch in range(EPOCHS[task]):
         total_loss = 0.0
@@ -69,6 +64,36 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
     return model
 
 
+def train_mnist(dataset, device):
+    """MNIST-specific training recipe"""
+    width = 256
+    depth = 13
+    batch_size = BATCH_SIZE  # tune this later
+    lr = LEARNING_RATE       # tune this later
+    momentum = 0.9           # tune this later
+
+    model = MNIST_Model(**TASKS["mnist"]).to(device)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    loss_fn = nn.CrossEntropyLoss()
+
+    return model, optimizer, loader, loss_fn
+
+
+def train_cifar10(dataset, device):
+    model = ResidualMLP(**TASKS["cifar10"]).to(device)
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+    loss_fn = nn.CrossEntropyLoss()           # expects raw logits
+    return model, optimizer, loader, loss_fn
+
+def train_imagenet32(dataset, device):
+    model = ResidualMLP(**TASKS["cifar10"]).to(device)
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+    loss_fn = nn.CrossEntropyLoss()           # expects raw logits
+    return model, optimizer, loader, loss_fn
+
 def predict(model, X):
     """Return class probabilities for X, one row per example, on the CPU."""
     device = next(model.parameters()).device
@@ -76,6 +101,7 @@ def predict(model, X):
     # Predict in chunks so a large test set does not run out of GPU memory.
     chunks = [model.predict(X[i:i + 1024].to(device)).cpu() for i in range(0, len(X), 1024)]
     return torch.cat(chunks)
+
 
 def diag_input_variance(task, X_train, y_train, seed=0, device="cuda"):    
     torch.manual_seed(seed)                   # makes the run reproducible
@@ -98,3 +124,4 @@ def diag_input_variance(task, X_train, y_train, seed=0, device="cuda"):
     variances = [layer_act.var().item() for layer_act in stream]
     means = [layer_act.mean().item() for layer_act in stream]
     pass
+

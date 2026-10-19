@@ -3,35 +3,40 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-#class MLP_Multiclass(nn.Module):
 class MNIST_Block(nn.Module):
-    def __init__(self, width, hidden):
+    """ One simple, fully connected hidden layer with a tanh activation.
+    
+    width out == width in
+    """
+    def __init__(self, width):
         super().__init__()
-        self.fc1 = nn.Linear(width, hidden)
-        self.fc2 = nn.Linear(hidden, width)
-        
+        self.fc1 = nn.Linear(width, width)
+
+        # using Xavier initialization, which is appropriate for a tanh activation
         nn.init.xavier_normal_(self.fc1.weight)
-        nn.init.xavier_normal_(self.fc2.weight)
-        
+        # zero bias
         nn.init.zeros_(self.fc1.bias)
-        nn.init.zeros_(self.fc2.bias)
-        #self.norm = nn.LazyBatchNorm1d()
 
     def forward(self, x):
-        #branch = self.norm(x)
-        x = self.fc1(x)
-        x = F.tanh(x)
-        x = self.fc2(x)
-        return x
+        return torch.tanh(self.fc1(x))
 
 class MNIST_Model(nn.Module):
-    def __init__(self, in_features, num_classes, width=128, hidden=256, depth=30):
+    """ A very simple fully connected feed forward MLP.
+
+    Has some specified number of hidden layers that use tanh activation.
+
+    the hidden param is ignored but kept in the init signature since our other tasks use it.
+    And this class may use it in the future when we go back to residual MLP.
+
+    """
+    def __init__(self, in_features, num_classes, width=128, hidden=128, depth=5):
+
+        # since this is a simple feed forward MLP that's fully connected, we will ignore hidden param and use only width
         super().__init__()
         self.input_layer = nn.Linear(in_features, width)
-        self.head_fc1 = nn.Linear(width, hidden)
-        self.head_fc2 = nn.Linear(hidden, num_classes)
+        self.output_layer = nn.Linear(width, num_classes)
         
-        self.blocks = nn.ModuleList([MNIST_Block(width, hidden) for _ in range(depth)])
+        self.blocks = nn.ModuleList([MNIST_Block(width) for _ in range(depth)])
 
     def forward(self, x):
         x = x.flatten(start_dim=1)            # (N, C, H, W) -> (N, C*H*W)
@@ -40,7 +45,7 @@ class MNIST_Model(nn.Module):
         for block in self.blocks:
             x = block(x)
 
-        x = self.head_fc2(torch.tanh(self.head_fc1(x)))
+        x = self.output_layer(torch.tanh(x))
         return x
     
     def predict(self, x):
