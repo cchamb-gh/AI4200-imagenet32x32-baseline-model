@@ -10,7 +10,7 @@ from .mnist_model import MNIST_Model
 # plain SGD, constant learning rate, no dropout, no schedule, no augmentation.
 LEARNING_RATE = 0.05
 MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a default
-BATCH_SIZE = 256
+BATCH_SIZE = 64
 EPOCHS = {"mnist": 20, "cifar10": 30, "imagenet32": 10}
 
 def prepare(X):

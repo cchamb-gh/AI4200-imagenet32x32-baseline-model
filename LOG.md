@@ -119,6 +119,22 @@ that's a nice, big jump. Bigger than I expected. Imagenet accuracy also increase
 2026-10-19 16:19,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.0889,12.5,0
 
 
+### Change 6 - mnist, cifar10, imagenet32 - 2026-10-19 - #
+
+**Change:** Reduce microbatch size from 256 to 64
+
+**Why:** Smaller microbatches will exercise backpropogation more often. Going from 256 to 64 will
+give 4 times as many updates to weights and biases in every epoch.
+
+**Expected:** Having more updates is probably, mostly going to be a good thing, but I worry that
+doing more updates without adjusting learning rate may cause some jumping around as we approach
+convergence. The default LR of 0.05 needs to be reduced overall or configured with a scheduler. I
+predict some small improvement in accuracy of all tasks but perhaps some jumping around in the loss
+in the later epochs. We may see loss grow from one epoch to the next. Training time will be slightly
+longer since weights and biases are getting updated 4 times as often.
+
+**Result:**
+
 
 ----- Template ------
 ### Change X - X - 2026-10-XX - #
