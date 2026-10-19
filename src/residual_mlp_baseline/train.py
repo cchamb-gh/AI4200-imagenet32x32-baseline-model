@@ -9,6 +9,7 @@ from .mnist_model import MNIST_Model
 # Baseline settings. Deliberately plain so they are easy to beat:
 # plain SGD, constant learning rate, no dropout, no schedule, no augmentation.
 LEARNING_RATE = 0.05
+MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a default
 BATCH_SIZE = 256
 EPOCHS = {"mnist": 20, "cifar10": 30, "imagenet32": 10}
 
@@ -70,10 +71,10 @@ def train_mnist(dataset, device):
     depth = 13
     batch_size = BATCH_SIZE  # tune this later
     lr = LEARNING_RATE       # tune this later
-    momentum = 0.9           # tune this later
+    momentum = MOMENTUM      # tune this later
 
     model = MNIST_Model(**TASKS["mnist"]).to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     loss_fn = nn.CrossEntropyLoss()
 
@@ -82,14 +83,14 @@ def train_mnist(dataset, device):
 
 def train_cifar10(dataset, device):
     model = ResidualMLP(**TASKS["cifar10"]).to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
     loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
     loss_fn = nn.CrossEntropyLoss()           # expects raw logits
     return model, optimizer, loader, loss_fn
 
 def train_imagenet32(dataset, device):
-    model = ResidualMLP(**TASKS["cifar10"]).to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    model = ResidualMLP(**TASKS["imagenet32"]).to(device)
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
     loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
     loss_fn = nn.CrossEntropyLoss()           # expects raw logits
     return model, optimizer, loader, loss_fn
