@@ -119,7 +119,7 @@ that's a nice, big jump. Bigger than I expected. Imagenet accuracy also increase
 2026-10-19 16:19,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.0889,12.5,0
 
 
-### Change 6 - mnist, cifar10, imagenet32 - 2026-10-19 - #
+### Change 6 - mnist, cifar10, imagenet32 - 2026-10-19 - #688f7678
 
 **Change:** Reduce microbatch size from 256 to 64
 
@@ -134,8 +134,15 @@ in the later epochs. We may see loss grow from one epoch to the next. Training t
 longer since weights and biases are getting updated 4 times as often.
 
 **Result:**
+I need to look at loss rates in the notebook before drawing any conclusions here. Training definitely took longer for the cifar and
+imagenet tasks. Much longer than I expected. Looks like mnist accuracy went down. Accuracy for cifar and imagenet both went up by
+a percent. More to come
+2026-10-19 16:56,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,mnist,0.8629,0.6,0
+2026-10-19 17:00,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5574,4.8,0
+2026-10-19 17:43,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.0924,42.5,0
 
 
 ----- Template ------
 ### Change X - X - 2026-10-XX - #
 **Change:** **Why:** **Expected:** **Result:**
+
