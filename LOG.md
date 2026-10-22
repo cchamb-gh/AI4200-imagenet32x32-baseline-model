@@ -141,6 +141,78 @@ a percent. More to come
 2026-10-19 17:00,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5574,4.8,0
 2026-10-19 17:43,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.0924,42.5,0
 
+Updating with loss values. I see loss begin rising around epoch 9 for mnist. It doesn't follow the desired trajectory and gets worse over time. I think this would be fixed with a smaller learning rate when coupled with smaller batches and optimizer momentum.
+
+cifar and imagenet do show continued improvement as epochs increase, but it's not a fast improvement. They may need learning rate increased up to the point where we see oscillation in the loss rate.
+===== mnist =====
+epoch 1: train loss 0.4672
+epoch 2: train loss 0.3132
+epoch 3: train loss 0.2761
+epoch 4: train loss 0.2668
+epoch 5: train loss 0.2511
+epoch 6: train loss 0.2475
+epoch 7: train loss 0.2441
+epoch 8: train loss 0.2472
+epoch 9: train loss 0.2390
+epoch 10: train loss 0.2687
+epoch 11: train loss 0.2648
+epoch 12: train loss 0.2672
+epoch 13: train loss 0.2464
+epoch 14: train loss 0.2576
+epoch 15: train loss 0.3416
+epoch 16: train loss 0.3700
+epoch 17: train loss 0.3250
+epoch 18: train loss 0.3346
+epoch 19: train loss 0.4567
+epoch 20: train loss 0.5048
+mnist: test accuracy 86.29%  (training took 0.6 min)
+
+===== cifar10 =====
+epoch 1: train loss 1.7184
+epoch 2: train loss 1.4807
+epoch 3: train loss 1.3751
+epoch 4: train loss 1.3016
+epoch 5: train loss 1.2348
+epoch 6: train loss 1.1791
+epoch 7: train loss 1.1192
+epoch 8: train loss 1.0685
+epoch 9: train loss 1.0211
+epoch 10: train loss 0.9694
+epoch 11: train loss 0.9211
+epoch 12: train loss 0.8707
+epoch 13: train loss 0.8246
+epoch 14: train loss 0.7736
+epoch 15: train loss 0.7168
+epoch 16: train loss 0.6761
+epoch 17: train loss 0.6256
+epoch 18: train loss 0.5839
+epoch 19: train loss 0.5372
+epoch 20: train loss 0.4943
+epoch 21: train loss 0.4488
+epoch 22: train loss 0.4154
+epoch 23: train loss 0.3792
+epoch 24: train loss 0.3428
+epoch 25: train loss 0.3094
+epoch 26: train loss 0.2813
+epoch 27: train loss 0.2609
+epoch 28: train loss 0.2325
+epoch 29: train loss 0.2085
+epoch 30: train loss 0.1937
+cifar10: test accuracy 55.74%  (training took 4.8 min)
+
+===== imagenet32 =====
+epoch 1: train loss 6.0835
+epoch 2: train loss 5.6758
+epoch 3: train loss 5.4879
+epoch 4: train loss 5.3552
+epoch 5: train loss 5.2491
+epoch 6: train loss 5.1568
+epoch 7: train loss 5.0768
+epoch 8: train loss 5.0050
+epoch 9: train loss 4.9390
+epoch 10: train loss 4.8782
+imagenet32: test accuracy 9.24%  (training took 42.5 min)
+
 
 ----- Template ------
 ### Change X - X - 2026-10-XX - #
