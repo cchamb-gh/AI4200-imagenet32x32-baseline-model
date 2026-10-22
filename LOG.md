@@ -114,9 +114,11 @@ Pracitically no change in MNIST. I thought it would be a slight improvement, but
 close to optimum convergence and getting no benefit from momentum. CIFAR accuracy improved 5%, so
 that's a nice, big jump. Bigger than I expected. Imagenet accuracy also increased but only by 1%.
 
+```
 2026-10-19 16:05,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,mnist,0.9705,0.3,0
 2026-10-19 16:06,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5426,1.4,0
 2026-10-19 16:19,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.0889,12.5,0
+```
 
 
 ### Change 6 - mnist, cifar10, imagenet32 - 2026-10-19 - #688f7678
@@ -137,13 +139,18 @@ longer since weights and biases are getting updated 4 times as often.
 I need to look at loss rates in the notebook before drawing any conclusions here. Training definitely took longer for the cifar and
 imagenet tasks. Much longer than I expected. Looks like mnist accuracy went down. Accuracy for cifar and imagenet both went up by
 a percent. More to come
+
+```
 2026-10-19 16:56,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,mnist,0.8629,0.6,0
 2026-10-19 17:00,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5574,4.8,0
 2026-10-19 17:43,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.0924,42.5,0
+```
 
-Updating with loss values. I see loss begin rising around epoch 9 for mnist. It doesn't follow the desired trajectory and gets worse over time. I think this would be fixed with a smaller learning rate when coupled with smaller batches and optimizer momentum.
+*Updating with loss values*: I see loss begin rising around epoch 9 for mnist. It doesn't follow the desired trajectory and gets worse over time. I think this would be fixed with a smaller learning rate when coupled with smaller batches and optimizer momentum.
 
 cifar and imagenet do show continued improvement as epochs increase, but it's not a fast improvement. They may need learning rate increased up to the point where we see oscillation in the loss rate.
+
+```
 ===== mnist =====
 epoch 1: train loss 0.4672
 epoch 2: train loss 0.3132
@@ -212,6 +219,27 @@ epoch 8: train loss 5.0050
 epoch 9: train loss 4.9390
 epoch 10: train loss 4.8782
 imagenet32: test accuracy 9.24%  (training took 42.5 min)
+```
+
+
+### Change 7 - Telemetry and MNIST - 2026-10-22 - #
+
+**Changes:** Restore MNIST to a residual MLP network and then add measurements for the following:
+
+1. forward variance of the residual stream at every depth
+
+2. correlation across samples at every depth (whether different inputs are still represented differently or are collapsing onto the same direction)
+
+3. gradient RMS at every depth: the size of the backward signal reaching each block
+
+This follows the Week 5.1 notebook shared by Dr. Roberts in colab.
+
+
+**Why:** I need to be able to see what's happening inside the network to guide my future changes. Need to cultivate an understanding of what's going right and wrong.
+
+**Expected:** I'm only making changes to the MNIST model, and that's just to restore it to a basic residual MLP. There may be some incidental change in performance from changing network types, but the primary goal is to get the telemetry instrumentation up and running.
+
+**Result:**
 
 
 ----- Template ------

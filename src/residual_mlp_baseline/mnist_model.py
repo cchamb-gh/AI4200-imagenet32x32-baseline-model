@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class MNIST_Block(nn.Module):
+class MNIST_FC_Layer(nn.Module):
     """ One simple, fully connected hidden layer with a tanh activation.
     
     width out == width in
@@ -20,7 +20,7 @@ class MNIST_Block(nn.Module):
     def forward(self, x):
         return torch.tanh(self.fc1(x))
 
-class MNIST_Model(nn.Module):
+class MNIST_FFN_Model(nn.Module):
     """ A very simple fully connected feed forward MLP.
 
     Has some specified number of hidden layers that use tanh activation.

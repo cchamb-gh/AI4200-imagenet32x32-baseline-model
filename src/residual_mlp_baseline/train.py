@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from .model import TASKS, ResidualMLP
-from .mnist_model import MNIST_Model
+#from .mnist_model import MNIST_Model
 
 
 # Baseline settings. Deliberately plain so they are easy to beat:
@@ -73,11 +73,10 @@ def train_mnist(dataset, device):
     lr = LEARNING_RATE       # tune this later
     momentum = MOMENTUM      # tune this later
 
-    model = MNIST_Model(**TASKS["mnist"]).to(device)
+    model = ResidualMLP(**TASKS["mnist"], width=width, hidden=width, depth=5).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    loss_fn = nn.CrossEntropyLoss()
-
+    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+    loss_fn = nn.CrossEntropyLoss()           # expects raw logits
     return model, optimizer, loader, loss_fn
 
 
