@@ -1,2 +1,2 @@
 # The grading notebook imports these two functions from your package.
-from .train import train, predict
+from .train import train, predict, train_mnist
