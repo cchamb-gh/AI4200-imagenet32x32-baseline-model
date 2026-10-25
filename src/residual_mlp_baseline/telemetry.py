@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Dict, List, Any
 from .model import ResidualMLP, Block
-from .mnist_model import MNIST_FFN_Model, MNIST_FC_Layer
+#from .mnist_model import MNIST_FFN_Model, MNIST_FC_Layer
 
 
 def compute_rms(tensor: torch.Tensor) -> float:
