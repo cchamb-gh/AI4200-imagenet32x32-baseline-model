@@ -7,9 +7,14 @@ import torch.nn.functional as F
 # Each task differs only in its input size and its number of classes.
 # The same model class is used for all three.
 TASKS = {
-    "mnist":      {"in_features": 28 * 28,     "num_classes": 10},    # 28x28 grayscale
-    "cifar10":    {"in_features": 3 * 32 * 32, "num_classes": 10},    # 32x32 color
-    "imagenet32": {"in_features": 3 * 32 * 32, "num_classes": 1000},  # 32x32 color
+    "mnist":      {"in_features": 28 * 28,     "num_classes": 10,    # 28x28 grayscale
+                   "width": 128, "hidden": 256, "depth": 30},
+    
+    "cifar10":    {"in_features": 3 * 32 * 32, "num_classes": 10,    # 32x32 color
+                   "width": 128, "hidden": 256, "depth": 30},
+    
+    "imagenet32": {"in_features": 3 * 32 * 32, "num_classes": 1000,  # 32x32 color
+                   "width": 128, "hidden": 256, "depth": 30},
 }
 
 

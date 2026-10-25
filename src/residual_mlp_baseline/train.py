@@ -10,11 +10,12 @@ from .model import TASKS, ResidualMLP
 # plain SGD, constant learning rate, no dropout, no schedule, no augmentation.
 LEARNING_RATE = 0.05
 MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a default
-BATCH_SIZE = 64
-EPOCHS = {"mnist": 5, "cifar10": 30, "imagenet32": 10}
+BATCH_SIZE = 256
+EPOCHS = {"mnist": 10, "cifar10": 30, "imagenet32": 10}
 
 def prepare(X):
     """Convert uint8 images (0-255) to floats in roughly [-1, 1]."""
+    # TODO: Clay: look at scaling in addition to standardization here.
     return (torch.as_tensor(X).float() / 255.0 - 0.5) / 0.5
 
 
@@ -32,17 +33,17 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
     """Build a new model and train it from scratch. Returns the trained model."""
     torch.manual_seed(seed)                   # makes the run reproducible
 
-    # Wrap the data so we can loop over shuffled mini-batches.
-    dataset = TensorDataset(prepare(X_train), torch.as_tensor(y_train).long())
+    # 1. Build the model for this task. Only input size and class count differ
+    model = create_model_for_task(task).to(device)
 
-    # build task-specific models and optimizers
-    if task == "mnist":
-        model, optimizer, loader, loss_fn = train_mnist(dataset, device)
-    elif task == "cifar10":
-        model, optimizer, loader, loss_fn = train_cifar10(dataset, device)
-    else:
-        model, optimizer, loader, loss_fn = train_imagenet32(dataset, device)
-            
+    # 2. Wrap the data so we can loop over it in shuffled mini batches
+    dataset = TensorDataset(prepare(X_train), torch.as_tensor(y_train).long())
+    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+
+    # Choose the loss and optimizer
+    loss_fn = nn.CrossEntropyLoss()         # expects raw logits
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+           
 
     # The training loop.
     model.train()
@@ -64,36 +65,6 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
 
     return model
 
-
-def train_mnist(dataset, device):
-    """MNIST-specific training recipe"""
-    width = 256
-    depth = 13
-    batch_size = BATCH_SIZE  # tune this later
-    lr = LEARNING_RATE       # tune this later
-    momentum = MOMENTUM      # tune this later
-
-    model = ResidualMLP(**TASKS["mnist"], width=width, hidden=width, depth=5).to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum)
-    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
-    loss_fn = nn.CrossEntropyLoss()           # expects raw logits
-    return model, optimizer, loader, loss_fn
-
-
-def train_cifar10(dataset, device):
-    model = ResidualMLP(**TASKS["cifar10"]).to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
-    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
-    loss_fn = nn.CrossEntropyLoss()           # expects raw logits
-    return model, optimizer, loader, loss_fn
-
-def train_imagenet32(dataset, device):
-    model = ResidualMLP(**TASKS["imagenet32"]).to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
-    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
-    loss_fn = nn.CrossEntropyLoss()           # expects raw logits
-    return model, optimizer, loader, loss_fn
-
 def predict(model, X):
     """Return class probabilities for X, one row per example, on the CPU."""
     device = next(model.parameters()).device
@@ -102,3 +73,8 @@ def predict(model, X):
     chunks = [model.predict(X[i:i + 1024].to(device)).cpu() for i in range(0, len(X), 1024)]
     return torch.cat(chunks)
 
+
+
+def create_model_for_task(task):
+    model = ResidualMLP(**TASKS[task])
+    return model
