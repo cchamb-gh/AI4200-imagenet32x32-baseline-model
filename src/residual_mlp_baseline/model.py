@@ -116,3 +116,71 @@ class ResidualMLP(nn.Module):
         self.eval()                           # switch layers to inference behavior
         with torch.no_grad():                 # no gradients needed at inference
             return torch.softmax(self.forward(x), dim=1)
+
+
+
+class SwiGLUBlock(nn.Module):
+    def __init__(self, width, hidden):
+        super().__init__()
+        self.w_gate = nn.Linear(width, hidden)
+        self.w_up = nn.Linear(width, hidden)
+        self.w_down = nn.Linear(hidden, width)
+
+    def forward(self, x):
+        # 1. GATE PATH: Project the input and apply the non-linear SiLU (Swish) function.
+        # This creates a "gate" with values that decide how much information gets through.
+        gate_signal = F.silu(self.w_gate(x))
+        
+        # 2. VALUE PATH: Project the input linearly (without an activation function).
+        # This holds the actual feature values/data you want to process.
+        value_data = self.w_up(x)
+        
+        # 3. GATING: Perform element-wise multiplication.
+        # The gate signal selectively filters, scales, or blocks the feature values.
+        gated_features = gate_signal * value_data
+        
+        # 4. DOWN PROJECTION: Compress the gated features back down to the model's original dimension.
+        output = self.w_down(gated_features)
+
+        return output
+    
+    
+
+class SwiGLUNetwork(nn.Module):
+    def __init__(self, in_features, num_classes, width=128, hidden=256, depth=30):
+        super().__init__()
+
+        # Project the flattened image down to the backbone width.
+        self.input_layer = nn.Linear(in_features, width)
+
+        # The residual backbone: `depth` identical blocks.
+        self.blocks = nn.ModuleList([SwiGLUBlock(width, hidden) for _ in range(depth)])
+
+        # The head: same layers as a block, but the last layer outputs class scores.
+        self.head_norm = nn.LayerNorm(width)
+        self.head_fc1 = nn.Linear(width, hidden)
+        self.head_fc2 = nn.Linear(hidden, num_classes)
+
+    def forward(self, x, return_stream=False):
+        x = x.flatten(start_dim=1)            # (N, C, H, W) -> (N, C*H*W)
+        x = self.input_layer(x)
+        stream = [x]
+        for block in self.blocks:
+            x = block(x)
+            if return_stream:
+                stream.append(x)
+        x = self.head_norm(x)
+        x = self.head_fc1(x)
+
+        x = torch.sigmoid(x)
+        x = self.head_fc2(x)
+        if return_stream:
+            return x, stream
+        return x
+
+    def predict(self, x):
+        """Inference pass, never used during training. Returns class probabilities."""
+        self.eval()                           # switch layers to inference behavior
+        with torch.no_grad():                 # no gradients needed at inference
+            return torch.softmax(self.forward(x), dim=1)
+

@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from .model import TASKS, ResidualMLP
-#from .mnist_model import MNIST_Model
+from .model import *
 
 
 # Baseline settings. Deliberately plain so they are easy to beat:
@@ -76,5 +75,6 @@ def predict(model, X):
 
 
 def create_model_for_task(task):
-    model = ResidualMLP(**TASKS[task])
+    #model = ResidualMLP(**TASKS[task])
+    model = SwiGLUNetwork(**TASKS[task])
     return model

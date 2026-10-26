@@ -252,6 +252,19 @@ This follows the Week 5.1 notebook shared by Dr. Roberts in colab.
 **Result:** it works! needs some improvment, but it's working at a basic level. Gemini wrote the telemetry and plotting scripts. I integrated them with the notebook and got it running interactively on HPC.
 
 
+
+
+### Change 9 - SwiGLU - 2026-10-26 - #
+
+**Change:** Replace our normal residual MLP with SwiGLU
+
+**Why:** We learned about SwiGLU and other gated activation functions in class in lecture 8.1. It has the advantages of ReLU plus the additional ability to differentiate values less than zero. It supposed to help with overfitting.
+
+**Expected:** I should be able to build larger networks with less risk for overfitting. I saw some overfitting in my previous mnist tests. I expect I should be able to push mnist further and get better accuracy among the test dataset. That same advantage should apply to cifar10 and imagenet32, although I don't think I've witnessed overfitting there yet.
+
+**Result:**
+
+
 ----- Template ------
 ### Change X - X - 2026-10-XX - #
 **Change:** **Why:** **Expected:** **Result:**
