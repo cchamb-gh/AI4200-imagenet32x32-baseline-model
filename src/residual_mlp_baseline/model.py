@@ -122,18 +122,25 @@ class ResidualMLP(nn.Module):
 class SwiGLUBlock(nn.Module):
     def __init__(self, width, hidden):
         super().__init__()
-        self.w_gate = nn.Linear(width, hidden)
-        self.w_up = nn.Linear(width, hidden)
-        self.w_down = nn.Linear(hidden, width)
+
+        # Restore normalization that I had mistakenly removed earlier
+        self.norm = nn.LayerNorm(width)
+
+        self.w_gate = nn.Linear(width, hidden, bias=False)
+        self.w_up = nn.Linear(width, hidden, bias=False)
+        self.w_down = nn.Linear(hidden, width, bias=False)
 
     def forward(self, x):
+        # Restore normalization that I had mistakenly removed earlier
+        h = self.norm(x)
+
         # 1. GATE PATH: Project the input and apply the non-linear SiLU (Swish) function.
         # This creates a "gate" with values that decide how much information gets through.
-        gate_signal = F.silu(self.w_gate(x))
+        gate_signal = F.silu(self.w_gate(h))
         
         # 2. VALUE PATH: Project the input linearly (without an activation function).
         # This holds the actual feature values/data you want to process.
-        value_data = self.w_up(x)
+        value_data = self.w_up(h)
         
         # 3. GATING: Perform element-wise multiplication.
         # The gate signal selectively filters, scales, or blocks the feature values.
@@ -142,7 +149,8 @@ class SwiGLUBlock(nn.Module):
         # 4. DOWN PROJECTION: Compress the gated features back down to the model's original dimension.
         output = self.w_down(gated_features)
 
-        return output
+        # add the transformed output back to the original input
+        return x + output
     
     
 
@@ -158,15 +166,18 @@ class SwiGLUNetwork(nn.Module):
 
         # The head: same layers as a block, but the last layer outputs class scores.
         self.head_norm = nn.LayerNorm(width)
-        self.head_fc1 = nn.Linear(width, hidden)
-        self.head_fc2 = nn.Linear(hidden, num_classes)
+        self.head_fc1 = nn.Linear(width, hidden, bias=False)
+        self.head_fc2 = nn.Linear(hidden, num_classes, bias=False)
 
     def forward(self, x, return_stream=False):
         x = x.flatten(start_dim=1)            # (N, C, H, W) -> (N, C*H*W)
         x = self.input_layer(x)
         stream = [x]
-        for block in self.blocks:
+        
+        for i, block in enumerate(self.blocks):
             x = block(x)
+            #print(f"block {i}, mean: {x.mean():0.6f}, var: {x.var():0.6f}")
+            i += 1
             if return_stream:
                 stream.append(x)
         x = self.head_norm(x)

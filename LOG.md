@@ -254,13 +254,25 @@ This follows the Week 5.1 notebook shared by Dr. Roberts in colab.
 
 
 
-### Change 9 - SwiGLU - 2026-10-26 - #
+### Change 9 - SwiGLU - 2026-10-26 - #db001ab2f
 
 **Change:** Replace our normal residual MLP with SwiGLU
 
 **Why:** We learned about SwiGLU and other gated activation functions in class in lecture 8.1. It has the advantages of ReLU plus the additional ability to differentiate values less than zero. It supposed to help with overfitting.
 
 **Expected:** I should be able to build larger networks with less risk for overfitting. I saw some overfitting in my previous mnist tests. I expect I should be able to push mnist further and get better accuracy among the test dataset. That same advantage should apply to cifar10 and imagenet32, although I don't think I've witnessed overfitting there yet.
+
+**Result:** Awful! I must have a bug in my network. Test accuracy for mnist dropped to 11%, which is just barely above random guessing. Clearly something went wrong. commenceing troubleshooting.
+
+After doing some debugging, I see the input stream vanish and go entirely to zero after the fourth block. Both mean and variance become zero by block 5.
+
+### Change 10 - SwiGLU, bug fix - 2026-10-26 - #
+
+**Change:** Fix my earlier bug in my SwiGLU implementation. I'd failed to add the residual stream back to the output of the block. 
+
+**Why:** Fixing obvious bug
+
+**Expected:** Models should at least learn and do better than random guesses.
 
 **Result:**
 
