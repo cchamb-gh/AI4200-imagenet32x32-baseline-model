@@ -12,10 +12,30 @@ MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a
 BATCH_SIZE = 256
 EPOCHS = {"mnist": 10, "cifar10": 30, "imagenet32": 10}
 
-def prepare(X):
-    """Convert uint8 images (0-255) to floats in roughly [-1, 1]."""
-    # TODO: Clay: look at scaling in addition to standardization here.
-    return (torch.as_tensor(X).float() / 255.0 - 0.5) / 0.5
+# TODO: need to find a clean way to pass the training standardization pixel_mean and pixel_std to the
+# predict function's preparation. For now, we'll do it ugly since we always use same seed. 
+# empirically observe these values and save them in code. 
+PIXEL_MEANS = {"mnist": 0.130660, "cifar10": 0.473363, "imagenet32": 0.450095}
+PIXEL_STDS = {"mnist": 0.308108, "cifar10": 0.251569, "imagenet32": 0.261117}
+
+def prepare_train(X):
+    """Convert uint8 images (0-255) to floats in roughly [-1, 1].
+    Standardize input based on mean and standard deviation as shown in classwork 5.1 notebook
+    """
+    X_tensor = torch.as_tensor(X).float() / 255.0
+    pixel_mean = X_tensor.mean()
+    pixel_std = X_tensor.std()
+    X_tensor = (X_tensor - pixel_mean) / pixel_std
+    return X_tensor, pixel_mean, pixel_std
+
+def prepare_test(X, pixel_mean, pixel_std):
+    """Convert uint8 images (0-255) to floats. Standardize using the pixel
+    mean and pixel std found in training data. (We don't want to standardize based
+    on test data.)"""
+    X_tensor = torch.as_tensor(X).float() / 255.0
+    X_tensor = (X_tensor - pixel_mean) / pixel_std
+    return X_tensor
+
 
 
 # ---------------------------------------------------------------------------
@@ -36,7 +56,9 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
     model = create_model_for_task(task).to(device)
 
     # 2. Wrap the data so we can loop over it in shuffled mini batches
-    dataset = TensorDataset(prepare(X_train), torch.as_tensor(y_train).long())
+    prepared_training_data, pixel_mean, pixel_std = prepare_train(X_train)
+    print(f"task: {task}, pixel_mean: {pixel_mean:.6f}, pixel_std: {pixel_std:.6f}")
+    dataset = TensorDataset(prepared_training_data, torch.as_tensor(y_train).long())
     loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
     # Choose the loss and optimizer
@@ -67,7 +89,10 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
 def predict(model, X):
     """Return class probabilities for X, one row per example, on the CPU."""
     device = next(model.parameters()).device
-    X = prepare(X)
+    task_name = model.task_name
+    pixel_mean = PIXEL_MEANS[task_name]
+    pixel_std = PIXEL_STDS[task_name]
+    X = prepare_test(X, pixel_mean, pixel_std)
     # Predict in chunks so a large test set does not run out of GPU memory.
     chunks = [model.predict(X[i:i + 1024].to(device)).cpu() for i in range(0, len(X), 1024)]
     return torch.cat(chunks)
@@ -76,5 +101,5 @@ def predict(model, X):
 
 def create_model_for_task(task):
     #model = ResidualMLP(**TASKS[task])
-    model = SwiGLUNetwork(**TASKS[task])
+    model = SwiGLUNetwork(**TASKS[task], task_name=task)
     return model

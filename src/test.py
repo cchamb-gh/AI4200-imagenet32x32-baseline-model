@@ -13,8 +13,8 @@ DATA_DIR = "data"
 
 # Which tasks to run. Remove some while testing to save time.
 #TASKS_TO_RUN = ["mnist", "cifar10", "imagenet32"]
-#TASKS_TO_RUN = ["cifar10"]
-TASKS_TO_RUN = ["mnist"]
+TASKS_TO_RUN = ["mnist", "cifar10"]
+#TASKS_TO_RUN = ["imagenet32"]
 NUM_CLASSES = {"mnist": 10, "cifar10": 10, "imagenet32": 1000}
 IMPORT_NAME = os.environ.get("HARNESS_IMPORT_NAME", IMPORT_NAME)
 
@@ -106,7 +106,7 @@ def main():
         assert torch.allclose(probs.sum(dim=1), torch.ones(len(probs)), atol=1e-3), "rows of predict() must sum to 1"
 
         accuracy = (probs.argmax(dim=1).numpy() == y_test).mean()
-        results.append((task, accuracy, train_minutes))
+        #results.append((task, accuracy, train_minutes))
         print(f"{task}: test accuracy {accuracy:.2%}  (training took {train_minutes:.1f} min)")
 
         # # Save the result to a file right away, in case the browser stops showing output.

@@ -280,13 +280,24 @@ After doing some debugging, I see the input stream vanish and go entirely to zer
     * cifar10:    51.29%,  1.6 minutes
     * imagenet32:  5.86%, 14.8 minutes
 
-### Change 11 - He initialization for SwiGLU network - 2026-10-26 - #
+### Change 11 - He initialization for SwiGLU network - 2026-10-26 - #967cf0d0
 
 **Change:** Restore the He initialization of the SwiGLU network blocks. I had just been allowing the blocks' weights to be implicitly initialized, but we can be more deliberate to get better model performance.
 
 **Why:** Need to maintain variance throughout the depth of the network.
 
 **Expected:** Some small improvement in accuracy with no impact to training time. Network should continue to learn along its depth.
+
+**Result:** It's worse! I didn't expect that. Cifar10 and imagenet32 both suffered decreased accuracy on the test set. Perhaps I'm misunderstanding the right way to apply He initialization to the SwiGLU network.
+
+
+### Change 12 - input standardization - 2026-10-26 - #
+
+**Change:** Apply standardization to input tensors.
+
+**Why:** Gets the input variance close to 1, which is what our He-initialized layers are expecting.
+
+**Expected:** Some improvement in accuracy over the non-standardized inputs.
 
 **Result:**
 

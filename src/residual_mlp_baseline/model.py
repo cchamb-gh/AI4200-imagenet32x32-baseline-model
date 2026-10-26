@@ -63,7 +63,7 @@ class ResidualMLP(nn.Module):
     differs from its input size (width), so the two cannot be added.
     """
 
-    def __init__(self, in_features, num_classes, width=128, hidden=256, depth=30):
+    def __init__(self, in_features, num_classes, width=128, hidden=256, depth=30, task_name=""):
         super().__init__()
 
         # Project the flattened image down to the backbone width.
@@ -76,6 +76,9 @@ class ResidualMLP(nn.Module):
         self.head_norm = nn.LayerNorm(width)
         self.head_fc1 = nn.Linear(width, hidden)
         self.head_fc2 = nn.Linear(hidden, num_classes)
+
+        # preserve the task name in the model
+        self.task_name = task_name
 
 
         # # Xavier (Glorot) initialization for every linear layer, zero biases.
@@ -163,7 +166,7 @@ class SwiGLUBlock(nn.Module):
     
 
 class SwiGLUNetwork(nn.Module):
-    def __init__(self, in_features, num_classes, width=128, hidden=256, depth=30):
+    def __init__(self, in_features, num_classes, width=128, hidden=256, depth=30, task_name=""):
         super().__init__()
 
         # Project the flattened image down to the backbone width.
@@ -176,6 +179,10 @@ class SwiGLUNetwork(nn.Module):
         self.head_norm = nn.LayerNorm(width)
         self.head_fc1 = nn.Linear(width, hidden, bias=False)
         self.head_fc2 = nn.Linear(hidden, num_classes, bias=False)
+
+        # preserve the task name in the model
+        self.task_name = task_name
+
 
     def forward(self, x, return_stream=False):
         x = x.flatten(start_dim=1)            # (N, C, H, W) -> (N, C*H*W)
@@ -190,8 +197,6 @@ class SwiGLUNetwork(nn.Module):
                 stream.append(x)
         x = self.head_norm(x)
         x = self.head_fc1(x)
-
-        x = torch.sigmoid(x)
         x = self.head_fc2(x)
         if return_stream:
             return x, stream
