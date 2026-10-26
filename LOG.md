@@ -266,7 +266,7 @@ This follows the Week 5.1 notebook shared by Dr. Roberts in colab.
 
 After doing some debugging, I see the input stream vanish and go entirely to zero after the fourth block. Both mean and variance become zero by block 5.
 
-### Change 10 - SwiGLU, bug fix - 2026-10-26 - #
+### Change 10 - SwiGLU, bug fix - 2026-10-26 - #09b5376eb
 
 **Change:** Fix my earlier bug in my SwiGLU implementation. I'd failed to add the residual stream back to the output of the block. 
 
@@ -274,10 +274,27 @@ After doing some debugging, I see the input stream vanish and go entirely to zer
 
 **Expected:** Models should at least learn and do better than random guesses.
 
+**Result:** Models did learn. The bugfix worked. Accuracy measurement was slightly lower than the original ResidualMLP network from previous commits BUT training was much faster because the new SwiGLU network was using the original batch size of 256. Training was 14.8 minutes compared to 42+ minutes for the 64 batch size. 
+
+    * mnist:      97.75%,  0.7 minutes
+    * cifar10:    51.29%,  1.6 minutes
+    * imagenet32:  5.86%, 14.8 minutes
+
+### Change 11 - He initialization for SwiGLU network - 2026-10-26 - #
+
+**Change:** Restore the He initialization of the SwiGLU network blocks. I had just been allowing the blocks' weights to be implicitly initialized, but we can be more deliberate to get better model performance.
+
+**Why:** Need to maintain variance throughout the depth of the network.
+
+**Expected:** Some small improvement in accuracy with no impact to training time. Network should continue to learn along its depth.
+
 **Result:**
 
 
 ----- Template ------
 ### Change X - X - 2026-10-XX - #
-**Change:** **Why:** **Expected:** **Result:**
+**Change:**
+**Why:**
+**Expected:**
+**Result:**
 

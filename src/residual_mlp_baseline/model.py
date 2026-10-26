@@ -130,6 +130,14 @@ class SwiGLUBlock(nn.Module):
         self.w_up = nn.Linear(width, hidden, bias=False)
         self.w_down = nn.Linear(hidden, width, bias=False)
 
+        # Use He initialization for my linear layers. We're using silu activation, which is 
+        # pretty close to ReLU, so maybe we can use same approach?
+        
+        # He init with variance 2 / fan_in for the gate and w_up, and 1 / fan_in for the down
+        nn.init.normal_(self.w_gate.weight, mean=0, std=math.sqrt(2 / width))
+        nn.init.normal_(self.w_up.weight, mean=0, std=math.sqrt(2 / width))
+        nn.init.normal_(self.w_down.weight, mean=0, std=math.sqrt(1 / width))
+
     def forward(self, x):
         # Restore normalization that I had mistakenly removed earlier
         h = self.norm(x)
