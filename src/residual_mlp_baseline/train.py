@@ -57,7 +57,7 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
 
     # 2. Wrap the data so we can loop over it in shuffled mini batches
     prepared_training_data, pixel_mean, pixel_std = prepare_train(X_train)
-    print(f"task: {task}, pixel_mean: {pixel_mean:.6f}, pixel_std: {pixel_std:.6f}")
+    #print(f"task: {task}, pixel_mean: {pixel_mean:.6f}, pixel_std: {pixel_std:.6f}")
     dataset = TensorDataset(prepared_training_data, torch.as_tensor(y_train).long())
     loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
