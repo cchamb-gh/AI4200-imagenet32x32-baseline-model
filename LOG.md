@@ -241,6 +241,16 @@ This follows the Week 5.1 notebook shared by Dr. Roberts in colab.
 
 **Result:**
 
+### Change 8 - diagnostics - 2026-10-25 - #05b7b6d29
+
+**Change:** Get diagnostics and ablation study code working on HPC with imagenet32
+
+**Why:** to help steer model and training regimen adjustments 
+
+**Expected:** get some stats and graphs
+
+**Result:** it works! needs some improvment, but it's working at a basic level. Gemini wrote the telemetry and plotting scripts. I integrated them with the notebook and got it running interactively on HPC.
+
 
 ----- Template ------
 ### Change X - X - 2026-10-XX - #
