@@ -4,7 +4,7 @@
 #SBATCH --account=ai4200-001-2026f
 #SBATCH --gpus=1
 #SBATCH --cpus-per-gpu=1
-#SBATCH --mem=32G
+#SBATCH --mem=48G
 #SBATCH --time=00-02:00:00
 #SBATCH --nodes=1
 
