@@ -90,13 +90,10 @@ def main():
         # Train from scratch.
         start = time.time()
 
-        #diag = train_module.diag_input_variance(task, X_train, y_train, seed=SEED, device=DEVICE)
-        model = student.train(task, X_train, y_train, seed=SEED, device=DEVICE)
+        # model = student.train(task, X_train, y_train, seed=SEED, device=DEVICE)
+        model, history = student.train_and_evaluate(task, X_train, y_train, X_test, y_test, seed=SEED, device=DEVICE)
         train_minutes = (time.time() - start) / 60
 
-        # acts_1 = get_activations(model, 1)
-
-        # print(model.activation_variance)
 
         # Predict on the held-out test set.
         probs = torch.as_tensor(student.predict(model, X_test)).float().cpu()
@@ -109,15 +106,6 @@ def main():
         #results.append((task, accuracy, train_minutes))
         print(f"{task}: test accuracy {accuracy:.2%}  (training took {train_minutes:.1f} min)")
 
-        # # Save the result to a file right away, in case the browser stops showing output.
-        # new_file = not os.path.exists(RESULTS_FILE)
-        # with open(RESULTS_FILE, "a", newline="") as f:
-        #     writer = csv.writer(f)
-        #     if new_file:
-        #         writer.writerow(["time", "package_url", "import_name", "task", "accuracy", "train_minutes", "seed"])
-        #     writer.writerow([time.strftime("%Y-%m-%d %H:%M"), PACKAGE_URL, IMPORT_NAME, task,
-        #                      f"{accuracy:.4f}", f"{train_minutes:.1f}", SEED])
-        # post_to_leaderboard(task, accuracy, train_minutes)
 
         del model, X_train, y_train, X_test, y_test, probs   # free memory before the next task
         if DEVICE == "cuda":

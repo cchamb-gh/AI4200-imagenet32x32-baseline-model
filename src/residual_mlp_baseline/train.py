@@ -12,6 +12,8 @@ MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a
 BATCH_SIZE = 256
 EPOCHS = {"mnist": 10, "cifar10": 30, "imagenet32": 10}
 
+
+
 # TODO: need to find a clean way to pass the training standardization pixel_mean and pixel_std to the
 # predict function's preparation. For now, we'll do it ugly since we always use same seed. 
 # empirically observe these values and save them in code. 
@@ -36,19 +38,62 @@ def prepare_test(X, pixel_mean, pixel_std):
     X_tensor = (X_tensor - pixel_mean) / pixel_std
     return X_tensor
 
+def create_model_for_task(task):
+    #model = ResidualMLP(**TASKS[task])
+    model = SwiGLUNetwork(**TASKS[task], task_name=task)
+    return model
 
 
-# ---------------------------------------------------------------------------
-# The two functions below are the REQUIRED INTERFACE for every submission.
-# The grading notebook calls them like this:
-#
-#     model = train("cifar10", X_train, y_train, seed=0, device="cuda")
-#     probs = predict(model, X_test)
-#
-# Change anything inside them, but keep their names and arguments.
-# ---------------------------------------------------------------------------
 
-def train(task, X_train, y_train, seed=0, device="cuda"):
+def train_epoch(model, loader, loss_fn, optimizer, device):
+    model.train()
+    total_loss = 0.0
+    correct = 0
+    total = 0
+
+    for X_batch, y_batch in loader:
+        X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+
+        optimizer.zero_grad()
+        logits = model(X_batch)
+        loss = loss_fn(logits, y_batch)
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item() * len(X_batch)
+        _, predicted = logits.max(1)
+        total += y_batch.size(0)
+        correct += predicted.eq(y_batch).sum().item()
+    epoch_loss = total_loss / total
+    epoch_acc = 100 * correct / total
+    
+    return epoch_loss, epoch_acc
+
+@torch.no_grad()
+def evaluate(model, dataloader, loss_fn, device):
+    model.eval()
+    running_loss = 0.0
+    correct = 0
+    total = 0
+
+    for inputs, targets in dataloader:
+        inputs, targets = inputs.to(device), targets.to(device)
+
+        outputs = model(inputs)
+        loss = loss_fn(outputs, targets)
+
+        running_loss += loss.item() * inputs.size(0)
+        _, predicted = outputs.max(1)
+        total += targets.size(0)
+        correct += predicted.eq(targets).sum().item()
+
+    eval_loss = running_loss / total
+    eval_acc = 100.0 * correct / total
+    return eval_loss, eval_acc
+        
+
+
+def _train_internal(task, X_train, y_train, seed=0, device="cuda", eval_data=None):
     """Build a new model and train it from scratch. Returns the trained model."""
     torch.manual_seed(seed)                   # makes the run reproducible
 
@@ -65,26 +110,69 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
     loss_fn = nn.CrossEntropyLoss()         # expects raw logits
     optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
            
+    history = {
+        "train_loss": [],
+        "train_acc": [],
+        "test_loss": [],
+        "test_acc": [],
+    }
 
-    # The training loop.
-    model.train()
-    for epoch in range(EPOCHS[task]):
-        total_loss = 0.0
-        for X_batch, y_batch in loader:
-            X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+    for i in range(1, EPOCHS[task] + 1):
+        train_loss, train_acc = train_epoch(model, loader, loss_fn, optimizer, device)
+        history["train_loss"].append(train_loss)
+        history["train_acc"].append(train_acc)
 
-            logits = model(X_batch)           # forward pass
-            loss = loss_fn(logits, y_batch)   # how wrong are we?
+        if eval_data is not None:
+            X_test, y_test = eval_data
+            X_test = prepare_test(X_test, pixel_mean, pixel_std) # !! using training pixel_mean and pixel_std
+            test_dataset = TensorDataset(X_test, torch.as_tensor(y_test).long())
+            test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-            optimizer.zero_grad()             # clear old gradients
-            loss.backward()                   # backward pass: compute gradients
-            optimizer.step()                  # update the weights
+            test_loss, test_acc = evaluate(model, test_loader, loss_fn, device)
+            history["test_loss"].append(test_loss)
+            history["test_acc"].append(test_acc)
 
-            total_loss += loss.item() * len(X_batch)
+            print(f"epoch {i}: train loss {train_loss:.4f}, train accuracy: {train_acc:.4f}, test accuracy: {test_acc:.4f}")
+        else:
+            print(f"epoch {i}: train loss {train_loss:.4f}, train accuracy: {train_acc:.4f}")
 
-        print(f"epoch {epoch + 1}: train loss {total_loss / len(dataset):.4f}")
+    if eval_data is not None:
+        return model, history
+    else:
+        return model
 
-    return model
+
+# ---------------------------------------------------------------------------
+# The two functions below are the REQUIRED INTERFACE for every submission.
+# The grading notebook calls them like this:
+#
+#     model = train("cifar10", X_train, y_train, seed=0, device="cuda")
+#     probs = predict(model, X_test)
+#
+# Change anything inside them, but keep their names and arguments.
+# ---------------------------------------------------------------------------
+
+
+def train(task, X_train, y_train, seed=0, device="cuda"):
+    """Original interface. Unchanged signature, returns only `model`."""
+    return _train_internal(task, X_train, y_train, seed=seed, device=device, eval_data=None)
+
+# ---------------------------------------------------------------------------
+# 3. NEW WRAPPER FUNCTION (Passes test set & returns model + history)
+# ---------------------------------------------------------------------------
+def train_and_evaluate(task, X_train, y_train, X_test, y_test, seed=0, device="cuda"):
+    """New interface for running training with continuous test logging."""
+    return _train_internal(
+        task, 
+        X_train, 
+        y_train, 
+        seed=seed, 
+        device=device, 
+        eval_data=(X_test, y_test)
+    )
+
+
+
 
 def predict(model, X):
     """Return class probabilities for X, one row per example, on the CPU."""
@@ -99,7 +187,3 @@ def predict(model, X):
 
 
 
-def create_model_for_task(task):
-    #model = ResidualMLP(**TASKS[task])
-    model = SwiGLUNetwork(**TASKS[task], task_name=task)
-    return model

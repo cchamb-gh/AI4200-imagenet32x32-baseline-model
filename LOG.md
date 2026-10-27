@@ -291,13 +291,26 @@ After doing some debugging, I see the input stream vanish and go entirely to zer
 **Result:** It's worse! I didn't expect that. Cifar10 and imagenet32 both suffered decreased accuracy on the test set. Perhaps I'm misunderstanding the right way to apply He initialization to the SwiGLU network.
 
 
-### Change 12 - input standardization - 2026-10-26 - #
+### Change 12 - input standardization - 2026-10-26 - #6bba0b84
 
 **Change:** Apply standardization to input tensors.
 
 **Why:** Gets the input variance close to 1, which is what our He-initialized layers are expecting.
 
 **Expected:** Some improvement in accuracy over the non-standardized inputs.
+
+**Result:** mnist increased by less than one percent going from 97.28% to 97.52%. cifar10 went from 44.73% to 45.05%. So, that's some improvment but really not very much. After making this change, I saw documentation about standardizing invidiaul channels in the RGB images instead of just having a single pixel mean and std. That makes sense. I'll put that into a future change.
+
+Also note that I had an out-of-memory crash on imagenet32, so that didn't complete. I suspect it's an issue with calculating the pixel mean and std for the whole dataset at once. I'll request more memory in my job spec, and if that doesn't work, I'll remove the code that calculates those values dynamically.
+
+
+### Change 13 - adding accuracy and loss curves - 2026-10-26 - #
+
+**Change:** Add a way to track accuracy and loss during training by epoch so I can watch for issues.
+
+**Why:** I suspect there's some overtraining based on some local tests I'm running with MNIST and some intuition from previous runs. There may be overfitting with the other models as well.
+
+**Expected:** I expect to see some graphs showing whether my models are suffering from underfitting or overfitting. I suspect overfitting is more likely.
 
 **Result:**
 
