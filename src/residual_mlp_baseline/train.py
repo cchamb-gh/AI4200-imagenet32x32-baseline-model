@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
+import torchvision.transforms.v2 as v2
 
 from .model import *
 
@@ -12,30 +13,36 @@ MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a
 BATCH_SIZE = 256
 EPOCHS = {"mnist": 10, "cifar10": 30, "imagenet32": 10}
 
+def get_transforms(task):
+    if task == "mnist":
+        train_transform = v2.Compose([
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=[0.1307], std=[0.3081])
+        ])
+        eval_transform = v2.Compose([
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=[0.1307], std=[0.3081])
+        ])
+    else:  # cifar10 or imagenet32
+        policy = v2.AutoAugmentPolicy.CIFAR10 if task == "cifar10" else v2.AutoAugmentPolicy.IMAGENET
+        train_transform = v2.Compose([
+            v2.AutoAugment(policy=policy),
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        eval_transform = v2.Compose([
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+    return train_transform, eval_transform
 
 
-# TODO: need to find a clean way to pass the training standardization pixel_mean and pixel_std to the
-# predict function's preparation. For now, we'll do it ugly since we always use same seed. 
-# empirically observe these values and save them in code. 
-PIXEL_MEANS = {"mnist": 0.130660, "cifar10": 0.473363, "imagenet32": 0.450095}
-PIXEL_STDS = {"mnist": 0.308108, "cifar10": 0.251569, "imagenet32": 0.261117}
-
-def prepare_train(X):
-    """Convert uint8 images (0-255) to floats in roughly [-1, 1].
-    Standardize input based on mean and standard deviation as shown in classwork 5.1 notebook
-    """
-    X_tensor = torch.as_tensor(X).float() / 255.0
-    pixel_mean = X_tensor.mean()
-    pixel_std = X_tensor.std()
-    X_tensor = (X_tensor - pixel_mean) / pixel_std
-    return X_tensor, pixel_mean, pixel_std
-
-def prepare_test(X, pixel_mean, pixel_std):
-    """Convert uint8 images (0-255) to floats. Standardize using the pixel
-    mean and pixel std found in training data. (We don't want to standardize based
-    on test data.)"""
-    X_tensor = torch.as_tensor(X).float() / 255.0
-    X_tensor = (X_tensor - pixel_mean) / pixel_std
+def format_tensor(X):
+    X_tensor = torch.as_tensor(X)
+    if X_tensor.ndim == 3:  # (N, H, W) -> (N, 1, H, W)
+        X_tensor = X_tensor.unsqueeze(1)
+    elif X_tensor.ndim == 4 and X_tensor.shape[-1] in (1, 3):  # (N, H, W, C) -> (N, C, H, W)
+        X_tensor = X_tensor.permute(0, 3, 1, 2)
     return X_tensor
 
 def create_model_for_task(task):
@@ -44,15 +51,15 @@ def create_model_for_task(task):
     return model
 
 
-
-def train_epoch(model, loader, loss_fn, optimizer, device):
+def train_epoch(model, loader, loss_fn, optimizer, transform, device):
     model.train()
     total_loss = 0.0
     correct = 0
     total = 0
 
     for X_batch, y_batch in loader:
-        X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+        X_batch = transform(X_batch.to(device))
+        y_batch = y_batch.to(device)
 
         optimizer.zero_grad()
         logits = model(X_batch)
@@ -70,14 +77,16 @@ def train_epoch(model, loader, loss_fn, optimizer, device):
     return epoch_loss, epoch_acc
 
 @torch.no_grad()
-def evaluate(model, dataloader, loss_fn, device):
+def evaluate(model, dataloader, loss_fn, transform, device):
     model.eval()
     running_loss = 0.0
     correct = 0
     total = 0
 
     for inputs, targets in dataloader:
-        inputs, targets = inputs.to(device), targets.to(device)
+        inputs = transform(inputs.to(device))
+        targets = targets.to(device)
+        #inputs, targets = inputs.to(device), targets.to(device)
 
         outputs = model(inputs)
         loss = loss_fn(outputs, targets)
@@ -99,16 +108,15 @@ def _train_internal(task, X_train, y_train, seed=0, device="cuda", eval_data=Non
 
     # 1. Build the model for this task. Only input size and class count differ
     model = create_model_for_task(task).to(device)
+    train_transform, eval_transform = get_transforms(task)
 
-    # 2. Wrap the data so we can loop over it in shuffled mini batches
-    prepared_training_data, pixel_mean, pixel_std = prepare_train(X_train)
-    #print(f"task: {task}, pixel_mean: {pixel_mean:.6f}, pixel_std: {pixel_std:.6f}")
-    dataset = TensorDataset(prepared_training_data, torch.as_tensor(y_train).long())
+    X_train_formatted = format_tensor(X_train)
+    dataset = TensorDataset(X_train_formatted, torch.from_numpy(y_train).long())
     loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
     # Choose the loss and optimizer
     loss_fn = nn.CrossEntropyLoss()         # expects raw logits
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
            
     history = {
         "train_loss": [],
@@ -118,17 +126,17 @@ def _train_internal(task, X_train, y_train, seed=0, device="cuda", eval_data=Non
     }
 
     for i in range(1, EPOCHS[task] + 1):
-        train_loss, train_acc = train_epoch(model, loader, loss_fn, optimizer, device)
+        train_loss, train_acc = train_epoch(model, loader, loss_fn, optimizer, train_transform, device)
         history["train_loss"].append(train_loss)
         history["train_acc"].append(train_acc)
 
         if eval_data is not None:
             X_test, y_test = eval_data
-            X_test = prepare_test(X_test, pixel_mean, pixel_std) # !! using training pixel_mean and pixel_std
-            test_dataset = TensorDataset(X_test, torch.as_tensor(y_test).long())
+            #X_test = prepare_test(X_test, pixel_mean, pixel_std) # !! using training pixel_mean and pixel_std
+            test_dataset = TensorDataset(torch.from_numpy(X_test), torch.from_numpy(y_test).long())
             test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-            test_loss, test_acc = evaluate(model, test_loader, loss_fn, device)
+            test_loss, test_acc = evaluate(model, test_loader, loss_fn, eval_transform, device)
             history["test_loss"].append(test_loss)
             history["test_acc"].append(test_acc)
 
@@ -172,17 +180,19 @@ def train_and_evaluate(task, X_train, y_train, X_test, y_test, seed=0, device="c
     )
 
 
-
-
 def predict(model, X):
     """Return class probabilities for X, one row per example, on the CPU."""
     device = next(model.parameters()).device
     task_name = model.task_name
-    pixel_mean = PIXEL_MEANS[task_name]
-    pixel_std = PIXEL_STDS[task_name]
-    X = prepare_test(X, pixel_mean, pixel_std)
-    # Predict in chunks so a large test set does not run out of GPU memory.
-    chunks = [model.predict(X[i:i + 1024].to(device)).cpu() for i in range(0, len(X), 1024)]
+    _, eval_transform = get_transforms(task_name)
+
+    X_formatted = format_tensor(X)
+
+    chunks = []
+    for i in range(0, len(X_formatted), 1024):
+        batch = X_formatted[i:i + 1024]
+        batch = eval_transform(batch.to(device))
+        chunks.append(model.predict(batch).cpu())
     return torch.cat(chunks)
 
 

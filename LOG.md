@@ -228,16 +228,20 @@ imagenet32: test accuracy 9.24%  (training took 42.5 min)
 
 1. forward variance of the residual stream at every depth
 
-2. correlation across samples at every depth (whether different inputs are still represented differently or are collapsing onto the same direction)
+2. correlation across samples at every depth (whether different inputs are still represented
+   differently or are collapsing onto the same direction)
 
 3. gradient RMS at every depth: the size of the backward signal reaching each block
 
 This follows the Week 5.1 notebook shared by Dr. Roberts in colab.
 
 
-**Why:** I need to be able to see what's happening inside the network to guide my future changes. Need to cultivate an understanding of what's going right and wrong.
+**Why:** I need to be able to see what's happening inside the network to guide my future changes.
+Need to cultivate an understanding of what's going right and wrong.
 
-**Expected:** I'm only making changes to the MNIST model, and that's just to restore it to a basic residual MLP. There may be some incidental change in performance from changing network types, but the primary goal is to get the telemetry instrumentation up and running.
+**Expected:** I'm only making changes to the MNIST model, and that's just to restore it to a basic
+residual MLP. There may be some incidental change in performance from changing network types, but
+the primary goal is to get the telemetry instrumentation up and running.
 
 **Result:**
 
@@ -249,7 +253,9 @@ This follows the Week 5.1 notebook shared by Dr. Roberts in colab.
 
 **Expected:** get some stats and graphs
 
-**Result:** it works! needs some improvment, but it's working at a basic level. Gemini wrote the telemetry and plotting scripts. I integrated them with the notebook and got it running interactively on HPC.
+**Result:** it works! needs some improvment, but it's working at a basic level. Gemini wrote the
+telemetry and plotting scripts. I integrated them with the notebook and got it running interactively
+on HPC.
 
 
 
@@ -258,23 +264,34 @@ This follows the Week 5.1 notebook shared by Dr. Roberts in colab.
 
 **Change:** Replace our normal residual MLP with SwiGLU
 
-**Why:** We learned about SwiGLU and other gated activation functions in class in lecture 8.1. It has the advantages of ReLU plus the additional ability to differentiate values less than zero. It supposed to help with overfitting.
+**Why:** We learned about SwiGLU and other gated activation functions in class in lecture 8.1. It
+has the advantages of ReLU plus the additional ability to differentiate values less than zero. It
+supposed to help with overfitting.
 
-**Expected:** I should be able to build larger networks with less risk for overfitting. I saw some overfitting in my previous mnist tests. I expect I should be able to push mnist further and get better accuracy among the test dataset. That same advantage should apply to cifar10 and imagenet32, although I don't think I've witnessed overfitting there yet.
+**Expected:** I should be able to build larger networks with less risk for overfitting. I saw some
+overfitting in my previous mnist tests. I expect I should be able to push mnist further and get
+better accuracy among the test dataset. That same advantage should apply to cifar10 and imagenet32,
+although I don't think I've witnessed overfitting there yet.
 
-**Result:** Awful! I must have a bug in my network. Test accuracy for mnist dropped to 11%, which is just barely above random guessing. Clearly something went wrong. commenceing troubleshooting.
+**Result:** Awful! I must have a bug in my network. Test accuracy for mnist dropped to 11%, which is
+just barely above random guessing. Clearly something went wrong. commenceing troubleshooting.
 
-After doing some debugging, I see the input stream vanish and go entirely to zero after the fourth block. Both mean and variance become zero by block 5.
+After doing some debugging, I see the input stream vanish and go entirely to zero after the fourth
+block. Both mean and variance become zero by block 5.
 
 ### Change 10 - SwiGLU, bug fix - 2026-10-26 - #09b5376eb
 
-**Change:** Fix my earlier bug in my SwiGLU implementation. I'd failed to add the residual stream back to the output of the block. 
+**Change:** Fix my earlier bug in my SwiGLU implementation. I'd failed to add the residual stream
+back to the output of the block. 
 
 **Why:** Fixing obvious bug
 
 **Expected:** Models should at least learn and do better than random guesses.
 
-**Result:** Models did learn. The bugfix worked. Accuracy measurement was slightly lower than the original ResidualMLP network from previous commits BUT training was much faster because the new SwiGLU network was using the original batch size of 256. Training was 14.8 minutes compared to 42+ minutes for the 64 batch size. 
+**Result:** Models did learn. The bugfix worked. Accuracy measurement was slightly lower than the
+original ResidualMLP network from previous commits BUT training was much faster because the new
+SwiGLU network was using the original batch size of 256. Training was 14.8 minutes compared to 42+
+minutes for the 64 batch size. 
 
     * mnist:      97.75%,  0.7 minutes
     * cifar10:    51.29%,  1.6 minutes
@@ -282,13 +299,18 @@ After doing some debugging, I see the input stream vanish and go entirely to zer
 
 ### Change 11 - He initialization for SwiGLU network - 2026-10-26 - #967cf0d0
 
-**Change:** Restore the He initialization of the SwiGLU network blocks. I had just been allowing the blocks' weights to be implicitly initialized, but we can be more deliberate to get better model performance.
+**Change:** Restore the He initialization of the SwiGLU network blocks. I had just been allowing the
+blocks' weights to be implicitly initialized, but we can be more deliberate to get better model
+performance.
 
 **Why:** Need to maintain variance throughout the depth of the network.
 
-**Expected:** Some small improvement in accuracy with no impact to training time. Network should continue to learn along its depth.
+**Expected:** Some small improvement in accuracy with no impact to training time. Network should
+continue to learn along its depth.
 
-**Result:** It's worse! I didn't expect that. Cifar10 and imagenet32 both suffered decreased accuracy on the test set. Perhaps I'm misunderstanding the right way to apply He initialization to the SwiGLU network.
+**Result:** It's worse! I didn't expect that. Cifar10 and imagenet32 both suffered decreased
+accuracy on the test set. Perhaps I'm misunderstanding the right way to apply He initialization to
+the SwiGLU network.
 
 
 ### Change 12 - input standardization - 2026-10-26 - #6bba0b84
@@ -299,18 +321,45 @@ After doing some debugging, I see the input stream vanish and go entirely to zer
 
 **Expected:** Some improvement in accuracy over the non-standardized inputs.
 
-**Result:** mnist increased by less than one percent going from 97.28% to 97.52%. cifar10 went from 44.73% to 45.05%. So, that's some improvment but really not very much. After making this change, I saw documentation about standardizing invidiaul channels in the RGB images instead of just having a single pixel mean and std. That makes sense. I'll put that into a future change.
+**Result:** mnist increased by less than one percent going from 97.28% to 97.52%. cifar10 went from
+44.73% to 45.05%. So, that's some improvment but really not very much. After making this change, I
+saw documentation about standardizing invidiaul channels in the RGB images instead of just having a
+single pixel mean and std. That makes sense. I'll put that into a future change.
 
-Also note that I had an out-of-memory crash on imagenet32, so that didn't complete. I suspect it's an issue with calculating the pixel mean and std for the whole dataset at once. I'll request more memory in my job spec, and if that doesn't work, I'll remove the code that calculates those values dynamically.
+Also note that I had an out-of-memory crash on imagenet32, so that didn't complete. I suspect it's
+an issue with calculating the pixel mean and std for the whole dataset at once. I'll request more
+memory in my job spec, and if that doesn't work, I'll remove the code that calculates those values
+dynamically.
 
 
-### Change 13 - adding accuracy and loss curves - 2026-10-26 - #
+### Change 13 - adding accuracy and loss curves - 2026-10-26 - #203d56f8
 
 **Change:** Add a way to track accuracy and loss during training by epoch so I can watch for issues.
 
-**Why:** I suspect there's some overtraining based on some local tests I'm running with MNIST and some intuition from previous runs. There may be overfitting with the other models as well.
+**Why:** I suspect there's some overtraining based on some local tests I'm running with MNIST and
+some intuition from previous runs. There may be overfitting with the other models as well.
 
-**Expected:** I expect to see some graphs showing whether my models are suffering from underfitting or overfitting. I suspect overfitting is more likely.
+**Expected:** I expect to see some graphs showing whether my models are suffering from underfitting
+or overfitting. I suspect overfitting is more likely.
+
+**Result:** Found massive (!!) overfitting on cifar10. Training accuracy was near 100%, but test set
+accuracy was only around 47%. I'll write up more detail in my analysis report.
+
+
+### Change 14 - address overfitting - 2026-10-27 - #
+
+**Change:** Add image augmentation blocks to training. 
+
+**Why:** We learned in class in week 8.1 that large networks are quite capable of memorizing the
+training data, and that's certainly what appears to be happening with my cifar10 network. I imagine
+it could also be happening with mnist and imagenet32 but it's not as pronounced. To address that, we
+talked in class about image augmentation. Pytorch has some built-in image transformations available.
+I searched for the most common transformations and looked at sample code to come up with a simple
+set of augmentations suitable for our images. Starting simple, I'm hoping to add complexity later.
+For now, we'll just do very basic **AutoAugment** for cifar10 and imagenet32.
+
+**Expected:** I expect to see much less overfitting in the 3-channel datasets. That should improve
+test accuracy and close the gap between train accuracy and test accuracy.
 
 **Result:**
 
