@@ -13,10 +13,15 @@ MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a
 BATCH_SIZE = 256
 EPOCHS = {"mnist": 10, "cifar10": 30, "imagenet32": 10}
 
+
+
+# I found these standardization coefficients online. not independently verified.
+# the random affine params are a result of trial and error on my laptop. Just changing params and seeing what looks good. 
 def get_transforms(task):
     if task == "mnist":
         train_transform = v2.Compose([
             v2.ToDtype(torch.float32, scale=True),
+            v2.RandomAffine(degrees=(-10, 10), translate=(0, 0.25), scale=(0.8, 1)),
             v2.Normalize(mean=[0.1307], std=[0.3081])
         ])
         eval_transform = v2.Compose([
@@ -27,6 +32,8 @@ def get_transforms(task):
         policy = v2.AutoAugmentPolicy.CIFAR10 if task == "cifar10" else v2.AutoAugmentPolicy.IMAGENET
         train_transform = v2.Compose([
             v2.AutoAugment(policy=policy),
+            v2.RandomHorizontalFlip(p=0.5),
+            v2.RandomAffine(degrees=(-10, 10), translate=(0, 0.25), scale=(0.8, 1)),
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])

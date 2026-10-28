@@ -346,7 +346,7 @@ or overfitting. I suspect overfitting is more likely.
 accuracy was only around 47%. I'll write up more detail in my analysis report.
 
 
-### Change 14 - address overfitting - 2026-10-27 - #
+### Change 14 - address overfitting - 2026-10-27 - #b442e50e3e
 
 **Change:** Add image augmentation blocks to training. 
 
@@ -361,7 +361,32 @@ For now, we'll just do very basic **AutoAugment** for cifar10 and imagenet32.
 **Expected:** I expect to see much less overfitting in the 3-channel datasets. That should improve
 test accuracy and close the gap between train accuracy and test accuracy.
 
+**Result:** I partly mitigated overfitting in cifar10. It's still overfitting, though. More work
+required. Train accuracy was 69.09% and test accuracy was 52.45%, which is a significant improvement
+over the previous runs but still not done. AutoAugment alone was a decent first attempt that paid
+dividends, but more image augmentation is required. And I may need some additional strategy to
+counteract overfitting.
+
+Also, the imagenet32 run timed out after just two epochs, and the notebook exited. That caused my
+loss and accuracy curves graph to fail to be plotted. The node showed heavy use with a 50+ load
+average, so it might have been a little slower than usual. I'll try again and capture the graphs in
+a future run.
+
+
+### Change 15 - additional image augmentation focusing on cifar10 - 2026-10-27 - #
+
+**Change:** Add additional types of transformations from the pool of available Pytorch v2
+transforms. Add RandomAffine and RandomHorizontalFlip.
+
+**Why:** Change 14 showed improvement in the extreme overfitting in my cifar10 tests, but it's still
+overfitting. I believe building up from the simple AutoAugment layer to include other
+transformations will show more improvement.
+
+**Expected:** I'm hoping to see another 5% gain in test accuracy resulting from better training once
+the network is steered away from memorization.
+
 **Result:**
+
 
 
 ----- Template ------
