@@ -373,7 +373,7 @@ average, so it might have been a little slower than usual. I'll try again and ca
 a future run.
 
 
-### Change 15 - additional image augmentation focusing on cifar10 - 2026-10-27 - #
+### Change 15 - additional image augmentation focusing on cifar10 - 2026-10-27 - #1c2873f32
 
 **Change:** Add additional types of transformations from the pool of available Pytorch v2
 transforms. Add RandomAffine and RandomHorizontalFlip.
@@ -385,7 +385,11 @@ transformations will show more improvement.
 **Expected:** I'm hoping to see another 5% gain in test accuracy resulting from better training once
 the network is steered away from memorization.
 
-**Result:**
+**Result:** Worse than baseline accuracy! I've cured the overfitting, but now the cifar10 and
+imagenet32 models are failing to learn at an acceptable rate. Even after 30 epochs, cifar10 only has
+test accuracy of 42%. Compare that to the previous run that yielded 52% accuracy when using only the
+AutoAugment transformation. I had added RandomAffine and RandomHorizontalFlip to the mix, so I'll do
+some local troubleshooting on small batches to see if one or the other was particularly harmful.
 
 
 

@@ -148,3 +148,8 @@ overfitting.
     • Lowest Test Loss   : 5.4727
     • Final Train Accuracy: 9.27%
     • Final Test Accuracy : 7.44%
+
+
+
+## change 15
+![Obs after change 15](./graphs/output_3_change_15.png)
