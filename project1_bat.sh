@@ -12,7 +12,9 @@ spack unload
 spack load py-jupyter
 spack load py-torch@2.13
 spack load py-python-dotenv
+spack load py-torchvision@0.28
 env_path="/work/classes/ai4200-001-2026f/bcchambers43/ai4200-p1"
 . ${env_path}/bin/activate
 cd /work/classes/ai4200-001-2026f/bcchambers43/AI4200-imagenet32x32-baseline-model
 papermill project1_harness.ipynb harness_run.ipynb --kernel _work_classes_ai4200-001-2026f_bcchambers43_ai4200-p1_bin_python --execution-timeout -1
+
