@@ -123,7 +123,7 @@ class ResidualMLP(nn.Module):
 
 
 class SwiGLUBlock(nn.Module):
-    def __init__(self, width, hidden):
+    def __init__(self, width, hidden, depth):
         super().__init__()
 
         # Restore normalization that I had mistakenly removed earlier
@@ -136,10 +136,12 @@ class SwiGLUBlock(nn.Module):
         # Use He initialization for my linear layers. We're using silu activation, which is 
         # pretty close to ReLU, so maybe we can use same approach?
         
-        # He init with variance 2 / fan_in for the gate and w_up, and 1 / fan_in for the down
-        nn.init.normal_(self.w_gate.weight, mean=0, std=math.sqrt(2 / width))
-        nn.init.normal_(self.w_up.weight, mean=0, std=math.sqrt(2 / width))
-        nn.init.normal_(self.w_down.weight, mean=0, std=math.sqrt(1 / width))
+        # variance for gate and up projection is 1 / sqrt(width)
+        nn.init.normal_(self.w_gate.weight, mean=0, std=1.0 / math.sqrt(width))
+        nn.init.normal_(self.w_up.weight, mean=0, std=1.0 / math.sqrt(width))
+
+        # scale down by 1 / sqrt(2 * depth) to keep the stream from blowing up
+        nn.init.normal_(self.w_down.weight, mean=0, std=1/math.sqrt(2 * depth))
 
     def forward(self, x):
         # Restore normalization that I had mistakenly removed earlier
@@ -168,36 +170,44 @@ class SwiGLUBlock(nn.Module):
 class SwiGLUNetwork(nn.Module):
     def __init__(self, in_features, num_classes, width=128, hidden=256, depth=30, task_name=""):
         super().__init__()
+        # preserve the task name in the model
+        self.task_name = task_name
 
         # Project the flattened image down to the backbone width.
-        self.input_layer = nn.Linear(in_features, width)
+        self.input_layer = nn.Linear(in_features, width, bias=False)
+
+        # init the input layer with he init
+        nn.init.kaiming_uniform_(self.input_layer.weight, nonlinearity='relu')
 
         # The residual backbone: `depth` identical blocks.
-        self.blocks = nn.ModuleList([SwiGLUBlock(width, hidden) for _ in range(depth)])
+        self.blocks = nn.ModuleList([SwiGLUBlock(width, hidden, depth) for _ in range(depth)])
 
         # The head: same layers as a block, but the last layer outputs class scores.
         self.head_norm = nn.LayerNorm(width)
         self.head_fc1 = nn.Linear(width, hidden, bias=False)
         self.head_fc2 = nn.Linear(hidden, num_classes, bias=False)
 
-        # preserve the task name in the model
-        self.task_name = task_name
-
+        # init head weights. He init for fc1, xavier for fc2
+        nn.init.kaiming_uniform_(self.head_fc1.weight, nonlinearity='relu')
+        nn.init.xavier_uniform_(self.head_fc2.weight)
 
     def forward(self, x, return_stream=False):
         x = x.flatten(start_dim=1)            # (N, C, H, W) -> (N, C*H*W)
         x = self.input_layer(x)
-        stream = [x]
+        
+        stream = [x] if return_stream else None
         
         for i, block in enumerate(self.blocks):
             x = block(x)
             #print(f"block {i}, mean: {x.mean():0.6f}, var: {x.var():0.6f}")
-            i += 1
             if return_stream:
                 stream.append(x)
+        
         x = self.head_norm(x)
         x = self.head_fc1(x)
+        x = F.silu(x) # non linearize the head layer
         x = self.head_fc2(x)
+
         if return_stream:
             return x, stream
         return x

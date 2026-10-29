@@ -392,7 +392,7 @@ AutoAugment transformation. I had added RandomAffine and RandomHorizontalFlip to
 some local troubleshooting on small batches to see if one or the other was particularly harmful.
 
 
-### Change 16 - still more image augmentation focusing on cifar10 - 2026-10-28 - #
+### Change 16 - still more image augmentation focusing on cifar10 - 2026-10-28 - #3b8e872976a
 
 **Change:** Establish a simpler image augmentation recipe using just RandomHorizontalFlip and
 AutoAugment
@@ -403,7 +403,24 @@ small tests. I finally settled on just using AutoAugment with RandomHorizontalFl
 
 **Expected:** Just trying to get back above baseline accuracy while still mitigating overfitting.
 
+**Result:** Finally, progress. Overfitting was mitigated in cifar10 and imagenet32, and the
+prediction accuracy for both tasks beat the baselines. cifar10 had 55% test accuracy, and imagenet32
+had 8%. Both are recent bests.
+
+
+### Change 17 - SwiGLU network refinement - 2026-10-29 - #
+
+**Change:** Consult LLM to find bugs/flaws in my SwiGLU blocks and network. It recommended making a couple of changes including:
+    1. update initialization inside my SwiGLU blocks. I was using sqrt(1/width), but I should have been using 1/sqrt(width).
+    2. remember to initialize the input and head layers - not just initializing inside the swiglu blocks
+    3. remember to include a non-linear layer between my linear head layers. Previously, they were just collapsing.
+
+**Why:** Using not-quite-right values in my layer initializations was causing some subtle loss or explosion of gradients and delaying or preventing learning. Also, having forgotten the non-linear layer in my model head, there was no point in having back-to-back linear layers because they'd just collapse. That's fixed.
+
+**Expected:** I expec the model should be more stable at depth, and therefore I should see some small increase in accuracy. I think this would classify as fine tuning rather than making any drastic changes, but I want to establish a new benchmark before I begin changing optimizer and scheduler settings.
+
 **Result:**
+
 
 
 ----- Template ------
