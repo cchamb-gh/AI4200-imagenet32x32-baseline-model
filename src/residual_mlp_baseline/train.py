@@ -18,12 +18,14 @@ LEARNING_RATE = ADAMW_LEARNING_RATE
 
 MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a default
 BATCH_SIZE = 256
-EPOCHS = {"mnist": 5, "cifar10": 30, "imagenet32": 10}
+EPOCHS = {"mnist": 15, "cifar10": 30, "imagenet32": 10}
 
 
 def get_transforms(task):
     if task == "mnist":
         train_transform = v2.Compose([
+            v2.RandomResizedCrop(size=(28, 28), scale=(0.95, 1.05), antialias=True),
+            v2.RandomRotation((-15, 15)),
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=[0.5], std=[0.25])
         ])
@@ -137,6 +139,9 @@ def _train_internal(task, X_train, y_train, seed=0, device="cuda", eval_data=Non
 
     # AdamW optimizer is used commonly with SwiGLU networks. Let's give it a try.
     optimizer = torch.optim.AdamW(model.parameters(), lr=ADAMW_LEARNING_RATE, weight_decay=0.05)
+    
+    # Support AdamW optimizer with a scheduler to warm up the weighted averaging in the early epochs.
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS[task])
            
     history = {
         "train_loss": [],

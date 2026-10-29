@@ -432,7 +432,7 @@ imagenet32 was slightly better with 8.13% to 8.39%.
     2026-10-29 13:05,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5490,2.0,0
     2026-10-29 13:22,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.0839,16.5,0
 
-### Change 18 - Switch optimizer from SGD to AdamW - 2026-10-29 - #
+### Change 18 - Switch optimizer from SGD to AdamW - 2026-10-29 - #4adb9f40
 
 **Change:** Switch from SGD with contstant learning rate to AdamW.
 
@@ -442,7 +442,20 @@ imagenet32 was slightly better with 8.13% to 8.39%.
 jumping over minima, especially in the later stages of training. AdamW should avoid some of that by
 supporting weight decay and normalizing the step sizes.
 
-**Result:**
+**Result:** imagenet32 had 8.52% test accuracy. cifar10 had 57.17% test accuracy. Both of those are the highest recent scores for me since adopting SwiGLU and data augmentation. 
+
+So, at least for cifar10, the scheduler increased test accuracy by 2%+, which is a nice boost.
+
+
+### Change 19 - Add scheduler to optimizer - 2026-10-29 - #
+
+**Change:** Add a scheduler to my AdamW optimizer to avoid doing too much, too early. Also, I'm going to sneak in some augmentation for mnist and bump its number of epochs from 5 to 15. I'm not actively trying to improve mnist currently, but I'll keep making little tweaks on the backburner.
+
+**Why:** The scheduler will keep the weights from decaying too early in my training cycle. Since AdamW uses weighted averages, it helps to give it a warm up period in the early epochs before making changes in the later epochs.
+
+**Expected:** Once again, I think this is fine tuning. At this point, I don't expect large swings in any direction. Perhaps another small bump in test accuracy. I'll be looking for changes in loss and accuracy curves with the scheduler. It sounds like it will defer making large weight adjustments until its warmed up, which means the curves won't change as drastically early but will hopefully yield better results in late epochs.
+
+**Result:** 
 
 
 
