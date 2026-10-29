@@ -408,18 +408,42 @@ prediction accuracy for both tasks beat the baselines. cifar10 had 55% test accu
 had 8%. Both are recent bests.
 
 
-### Change 17 - SwiGLU network refinement - 2026-10-29 - #
+### Change 17 - SwiGLU network refinement - 2026-10-29 - #4c45b814a
 
-**Change:** Consult LLM to find bugs/flaws in my SwiGLU blocks and network. It recommended making a couple of changes including:
-    1. update initialization inside my SwiGLU blocks. I was using sqrt(1/width), but I should have been using 1/sqrt(width).
-    2. remember to initialize the input and head layers - not just initializing inside the swiglu blocks
-    3. remember to include a non-linear layer between my linear head layers. Previously, they were just collapsing.
+**Change:** Consult LLM to find bugs/flaws in my SwiGLU blocks and network. It recommended making a
+    couple of changes including: 1. update initialization inside my SwiGLU blocks. I was using
+    sqrt(1/width), but I should have been using 1/sqrt(width). 2. remember to initialize the input
+    and head layers - not just initializing inside the swiglu blocks 3. remember to include a
+    non-linear layer between my linear head layers. Previously, they were just collapsing.
 
-**Why:** Using not-quite-right values in my layer initializations was causing some subtle loss or explosion of gradients and delaying or preventing learning. Also, having forgotten the non-linear layer in my model head, there was no point in having back-to-back linear layers because they'd just collapse. That's fixed.
+**Why:** Using not-quite-right values in my layer initializations was causing some subtle loss or
+explosion of gradients and delaying or preventing learning. Also, having forgotten the non-linear
+layer in my model head, there was no point in having back-to-back linear layers because they'd just
+collapse. That's fixed.
 
-**Expected:** I expec the model should be more stable at depth, and therefore I should see some small increase in accuracy. I think this would classify as fine tuning rather than making any drastic changes, but I want to establish a new benchmark before I begin changing optimizer and scheduler settings.
+**Expected:** I expect the model should be more stable at depth, and therefore I should see some
+small increase in accuracy. I think this would classify as fine tuning rather than making any
+drastic changes, but I want to establish a new benchmark before I begin changing optimizer and
+scheduler settings.
+
+**Result:** Not much change. Cifar10 was slightly worse 55.13% to 54.90% test accuracy, but
+imagenet32 was slightly better with 8.13% to 8.39%.
+
+    2026-10-29 13:05,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5490,2.0,0
+    2026-10-29 13:22,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.0839,16.5,0
+
+### Change 18 - Switch optimizer from SGD to AdamW - 2026-10-29 - #
+
+**Change:** Switch from SGD with contstant learning rate to AdamW.
+
+**Why:** AdamW supports weight decay as the model gets deeper. And it normalizes the step sizes.
+
+**Expected:** Some small degree of improvement in overall test accuracy. SGD would be prone to
+jumping over minima, especially in the later stages of training. AdamW should avoid some of that by
+supporting weight decay and normalizing the step sizes.
 
 **Result:**
+
 
 
 

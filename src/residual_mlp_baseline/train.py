@@ -8,7 +8,14 @@ from .model import *
 
 # Baseline settings. Deliberately plain so they are easy to beat:
 # plain SGD, constant learning rate, no dropout, no schedule, no augmentation.
-LEARNING_RATE = 0.05
+
+# for SGD, a larger learning rate is fine
+#   LEARNING_RATE = 0.05
+# But when we switch to AdamW, need to use a much smaller base learning rate.
+SGD_LEARNING_RATE = 0.05
+ADAMW_LEARNING_RATE = 0.001
+LEARNING_RATE = ADAMW_LEARNING_RATE
+
 MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a default
 BATCH_SIZE = 256
 EPOCHS = {"mnist": 5, "cifar10": 30, "imagenet32": 10}
@@ -124,7 +131,12 @@ def _train_internal(task, X_train, y_train, seed=0, device="cuda", eval_data=Non
 
     # Choose the loss and optimizer
     loss_fn = nn.CrossEntropyLoss()         # expects raw logits
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
+    
+    # SGD optimizer
+    #optimizer = torch.optim.SGD(model.parameters(), lr=SGD_LEARNING_RATE, momentum=MOMENTUM)
+
+    # AdamW optimizer is used commonly with SwiGLU networks. Let's give it a try.
+    optimizer = torch.optim.AdamW(model.parameters(), lr=ADAMW_LEARNING_RATE, weight_decay=0.05)
            
     history = {
         "train_loss": [],
