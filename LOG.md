@@ -392,6 +392,19 @@ AutoAugment transformation. I had added RandomAffine and RandomHorizontalFlip to
 some local troubleshooting on small batches to see if one or the other was particularly harmful.
 
 
+### Change 16 - still more image augmentation focusing on cifar10 - 2026-10-28 - #
+
+**Change:** Establish a simpler image augmentation recipe using just RandomHorizontalFlip and
+AutoAugment
+
+**Why:** I conduced a mini study on my laptop with various mixtures of normalization, scaling, and
+various v2 transforms. Often, the transforms would help overfitting but introduce underfitting in my
+small tests. I finally settled on just using AutoAugment with RandomHorizontalFlip. 
+
+**Expected:** Just trying to get back above baseline accuracy while still mitigating overfitting.
+
+**Result:**
+
 
 ----- Template ------
 ### Change X - X - 2026-10-XX - #

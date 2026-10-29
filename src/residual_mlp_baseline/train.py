@@ -11,35 +11,36 @@ from .model import *
 LEARNING_RATE = 0.05
 MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a default
 BATCH_SIZE = 256
-EPOCHS = {"mnist": 10, "cifar10": 30, "imagenet32": 10}
+EPOCHS = {"mnist": 5, "cifar10": 30, "imagenet32": 10}
 
 
-
-# I found these standardization coefficients online. not independently verified.
-# the random affine params are a result of trial and error on my laptop. Just changing params and seeing what looks good. 
 def get_transforms(task):
     if task == "mnist":
         train_transform = v2.Compose([
             v2.ToDtype(torch.float32, scale=True),
-            v2.RandomAffine(degrees=(-10, 10), translate=(0, 0.25), scale=(0.8, 1)),
-            v2.Normalize(mean=[0.1307], std=[0.3081])
+            v2.Normalize(mean=[0.5], std=[0.25])
         ])
         eval_transform = v2.Compose([
             v2.ToDtype(torch.float32, scale=True),
-            v2.Normalize(mean=[0.1307], std=[0.3081])
+            v2.Normalize(mean=[0.5], std=[0.25])
         ])
     else:  # cifar10 or imagenet32
+        # Experimenting with AutoAugment, which takes a policy value
         policy = v2.AutoAugmentPolicy.CIFAR10 if task == "cifar10" else v2.AutoAugmentPolicy.IMAGENET
+        
         train_transform = v2.Compose([
             v2.AutoAugment(policy=policy),
             v2.RandomHorizontalFlip(p=0.5),
-            v2.RandomAffine(degrees=(-10, 10), translate=(0, 0.25), scale=(0.8, 1)),
+            #v2.RandomResizedCrop(size=(32, 32), antialias=True),
             v2.ToDtype(torch.float32, scale=True),
-            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            # normalizing with std of 0.25 spreads it across the range of [-2, 2]
+            v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.25, 0.25, 0.25])
+            
         ])
         eval_transform = v2.Compose([
             v2.ToDtype(torch.float32, scale=True),
-            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+             # normalizing with std of 0.25 spreads it across the range of [-2, 2]
+            v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.25, 0.25, 0.25])
         ])
     return train_transform, eval_transform
 

@@ -8,11 +8,50 @@ For each task, describe your final architecture and training recipe: depth, widt
 ### 2. What mattered most.
 Which three to five changes improved accuracy the most? Support each claim with entries from your log that show the change and its effect.
 
+For cifar10, I was surprised using v2.Normalize had an impact in training accuracy. Here's a mini study I did just with cifar10 and data augmentation.
+
+#### **CIFAR10 Mini Study**
+
+First, I saw published means and standard deviations for imagenet32 on the [documentation page for pytorch](https://docs.pytorch.org/vision/0.29/transforms.html). So, I looked up published values for cifar10 and found that. However, these are values that cover the whole dataset. In a real scenario, we wouldn't know the inference values in advance, so I'm not planning to use them in my real model beyond this initial mini study.
+
+**Published means and std devs**
+    cifar10_mean = [0.4914, 0.4822, 0.4465]
+    cifar10_std  = [0.2470, 0.2435, 0.2616]
+
+| Normalizations | Loss<br>after 10 epochs | Train Accuracy<br>after 10 epochs | Test Accuracy<br>after 10 epochs |
+| :--- | :--- | :--- | :--- |
+| None (pixel values 0.0 - 1.0)  | 1.36 | 51.06 | 48.50 |
+| v2.Normalize m = 0.5, std = 0.25         | 0.39 | 86.38 | 50.21 |
+| v2.Normalize m = 0.5, std = 0.50         | 0.49 | 82.73 | 49.51 |
+| v2.Normalize m = published, std = published   | 0.35 | 87.43 | 49.61 |
+
+
+**Combine v2.Normalize with other augmentations**
+| Normalized <br>plus other<br>transforms | Loss<br>after 10 epochs | Train Accuracy<br>after 10 epochs | Test Accuracy<br>after 10 epochs |
+| :--- | :--- | :--- | :--- |
+| v2.AutoAugment  | 1.51 | 46.76 | 48.93 |
+| v2.RandomHorizontalFlip         | 0.75 | 73.74 | 51.65 |
+| v2.RandomAffine         | 1.46 | 47.48 | 46.56 |
+| v2.RandomResizeCrop   | 1.62 | 41.82 | 48.53 |
+| v2.RandomResizeCrop<br>and RandomHorizontalFlip   | 1.64 | 40.71 | 47.96 |
+| v2.AutoAugment<br>and RandomHorizontalFlip   | 1.52 | 43.58 | 51.18 |
+
+
+*_Label: CIFAR-10 Mini Study_*
+
+*Conclusion of mini study* It appears that the values used in normalization do matter. And it appears that HorizontalFlip alone isn't enough to mitigate overfitting. But it's useful as part of a larger data augmentation strategy. It's not clear to me yet which strategy will yield the best results. Going forward, I'm going to combine RandomHorizontalFlip and AutoAugment as a starting recipe on top of normalization with mean = 0.5, std = 0.25. It doesn't seem to learn quickly, but it mitigates the overfitting problem. I believe I can improve upon it with other techniques.
+
+
+
 ### 3. Training dynamics.
 Your ImageNet analysis from the section above: the figures and what they show about how your model trains. In the 5000-level section, this includes your ablation study.
 
 ### 4. What did not work.
 Describe ideas that failed and your best explanation of why.
+
+RandomAffine augmentation was a bust, at least with my params.
+
+Just making network bigger or adding epochs didn't help much.
 
 ### 5. Across the three tasks.
 How and why do your final models differ between MNIST, CIFAR-10, and ImageNet 32×32? What does that tell you about the limits of MLPs on images?
