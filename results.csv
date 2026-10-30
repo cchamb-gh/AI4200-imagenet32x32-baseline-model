@@ -46,3 +46,6 @@ time,package_url,import_name,task,accuracy,train_minutes,seed
 2026-10-29 13:47,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,mnist,0.9767,0.4,0
 2026-10-29 13:49,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5717,2.1,0
 2026-10-29 14:07,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.0852,17.2,0
+2026-10-29 19:18,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,mnist,0.9894,1.1,0
+2026-10-29 19:20,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5775,1.9,0
+2026-10-29 19:35,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.1054,15.6,0
