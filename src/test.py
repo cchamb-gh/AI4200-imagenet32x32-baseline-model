@@ -13,9 +13,9 @@ DATA_DIR = "data"
 
 # Which tasks to run. Remove some while testing to save time.
 #TASKS_TO_RUN = ["mnist", "cifar10", "imagenet32"]
-TASKS_TO_RUN = ["mnist", "cifar10"]
+#TASKS_TO_RUN = ["mnist", "cifar10"]
 #TASKS_TO_RUN = ["imagenet32"]
-#TASKS_TO_RUN = ["cifar10"]
+TASKS_TO_RUN = ["cifar10"]
 #TASKS_TO_RUN = ["mnist"]
 NUM_CLASSES = {"mnist": 10, "cifar10": 10, "imagenet32": 1000}
 IMPORT_NAME = os.environ.get("HARNESS_IMPORT_NAME", IMPORT_NAME)

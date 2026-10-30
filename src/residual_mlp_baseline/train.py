@@ -18,7 +18,7 @@ LEARNING_RATE = ADAMW_LEARNING_RATE
 
 MOMENTUM=0.9            # pytorch documentation often shows momentum of 0.9 as a default
 BATCH_SIZE = 256
-EPOCHS = {"mnist": 15, "cifar10": 30, "imagenet32": 10}
+EPOCHS = {"mnist": 15, "cifar10": 30, "imagenet32": 30}
 
 
 def get_transforms(task):

@@ -292,10 +292,13 @@ back to the output of the block.
 original ResidualMLP network from previous commits BUT training was much faster because the new
 SwiGLU network was using the original batch size of 256. Training was 14.8 minutes compared to 42+
 minutes for the 64 batch size. 
+| task       | test accuracy | train time   |
+| :--------- | :------------ | :---------   |
+| mnist      |        97.75% |  0.7 minutes |
+| cifar10    |        51.29% |  1.6 minutes |
+| imagenet32 |         5.86% | 14.8 minutes |
 
-    * mnist:      97.75%,  0.7 minutes
-    * cifar10:    51.29%,  1.6 minutes
-    * imagenet32:  5.86%, 14.8 minutes
+
 
 ### Change 11 - He initialization for SwiGLU network - 2026-10-26 - #967cf0d0
 
@@ -490,7 +493,7 @@ time was only very slightly higher. Seeing no improvement, I'll revert this chan
 adding (some small) overhead with no benefit.
 
 
-### Change 21 - going deep with cifar10 and imagenet32 - 2026-10-29 - #
+### Change 21 - going deep with cifar10 and imagenet32 - 2026-10-29 - #cf2aecfbf
 
 **Change:** increase depth from 30 to 90 SwiGLU blocks.
 
@@ -502,16 +505,34 @@ the previous width change back to 128 for width and hidden.
 imagenet32. Adding depth allows for more coordination between layers, so it's possible the model
 will learn to 'see' features that a more shallow model cannot.
 
-**Result:**
+**Result:** This change yielded the best ever performance for cifar10 with 58.83% test accuracy. On
+the other hand, imagenet fell short of its all time high, but was still a respectable 10.24%.
+However, training time increased by 150% so doing deep isn't necessarily the best choice or worth
+the extra computation time.
+
+*Deep Results*
+| task       | test accuracy | train time |
+| :--------- | :------------ | :--------- |
+|      mnist |        98.94% |     1.2 min|
+|    cifar10 |        58.83% |     5.0 min|
+| imagenet32 |        10.24% |    40.9 min|
 
 
 
 
+### Change 22 - final recipe for cifar10 and imagenet32 - 2026-10-29 - #
 
------ Template ------
-### Change X - X - 2026-10-XX - #
-**Change:**
-**Why:**
-**Expected:**
+**Change:** choose best performing options from earlier results by using different depth, width, and
+hidden values for cifar10 and imagenet32
+
+**Why:** it appears that cifar10 gets into memorization territory and doesn't benefit from the
+additional depth beyond 30. Imagenet, on the other hand, appeared to continue to train and improve
+with additional depth. I'll increase its depth to 120 and increase number of epochs to 30 for the
+final run.
+
+**Expected:** I expect cifar10 to go back to just above 58% accuracy using earlier settings of 128
+width, 256 hidden, and 30 depth. Imagenet should improve with the additional depth and additional
+epochs. I'd love to see it get above 12% for this final run.
+
 **Result:**
 
