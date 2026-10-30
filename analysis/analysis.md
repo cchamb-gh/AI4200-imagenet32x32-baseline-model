@@ -1,69 +1,128 @@
 # Final Report - AI5200 Project 1 - Clay Chambers
-## Final report
-The log records what you did; the report explains what you learned. Submit it as a PDF with these
-sections:
-### 1. Final models.
-For each task, describe your final architecture and training recipe: depth, width, activation, normalization, optimizer, schedule, regularization, augmentation, and training time. A table works well here. Report test accuracy from the harness next to the baseline's.
+
+
+## 1. Final models.
+**For each task, describe your final architecture and training recipe: depth, width, activation, normalization, optimizer, schedule, regularization, augmentation, and training time. A table works well here. Report test accuracy from the harness next to the baseline's.**
+
+### MNIST
+
+| MNIST Final Model| |
+| :--- | :--- |
+| Depth | 30 |
+| Width | 128 |
+| Activation | SwiGLU |
+| Normalization | LayerNorm at beginning of block|
+| Optimizer | AdamW, lr=0.001, weight_decay=0.05 |
+| Schedule | CosineAnnealingLR, 15 epochs |
+| Regularlization | standardization during augmentation |
+| Augmentation | RandomResizedCrop, <br> RandomRotation |
+| Training Time | 1.2 minutes |
+| Baseline Accuracy | 95.06% |
+| Test Accuracy | 98.94% |
+
+### CIFAR10
+
+| CIFAR10 Final Model| |
+| :--- | :--- |
+| Depth | 30 |
+| Width | 128 |
+| Activation | SwiGLU |
+| Normalization | LayerNorm at beginning of block|
+| Optimizer | AdamW, lr=0.001, weight_decay=0.05 |
+| Schedule | CosineAnnealingLR, 30 epochs |
+| Regularlization | standardization during augmentation |
+| Augmentation | AutoAugment policy=CIFAR10, <br> RandomHorizontalFlip, <br> v2.Normalization mean=0.5, std=0.25|
+| Training Time | 5.1 minutes |
+| Baseline Accuracy | 48.61% |
+| Test Accuracy | 58.83% |
+
+### IMAGENET32
+
+| IMAGENET32 Final Model| |
+| :--- | :--- |
+| Depth | 120 |
+| Width | 128 |
+| Activation | SwiGLU |
+| Normalization | LayerNorm at beginning of block|
+| Optimizer | AdamW, lr=0.001, weight_decay=0.05 |
+| Schedule | CosineAnnealingLR, 30 epochs |
+| Regularlization | standardization during augmentation |
+| Augmentation | AutoAugment policy=IMAGENET, <br> RandomHorizontalFlip, <br> v2.Normalization mean=0.5, std=0.25|
+| Training Time | 42.2 minutes |
+| Baseline Accuracy | 6.77% |
+| Test Accuracy | 10.24% |
+
 
 ### 2. What mattered most.
-Which three to five changes improved accuracy the most? Support each claim with entries from your log that show the change and its effect.
+**Which three to five changes improved accuracy the most? Support each claim with entries from your
+log that show the change and its effect.**
 
-For cifar10, I was surprised using v2.Normalize had an impact in training accuracy. Here's a mini study I did just with cifar10 and data augmentation.
+#### 1. Detecting and Correcting Overfitting with cifar10 - change 13
+By far, the most important change I made was in Change 13 when I added accuracy and loss curves to
+my notebook. Up to then, I was almost exclusively watching the training loss and test accuracy but
+not understanding why accuracy was stagnant while loss dropped near zero. Once I added a
+visualization, it allowed me to have a eureka moment and finally start understanding that the
+networks were memorizing inputs rather than actually learning.
 
-#### **CIFAR10 Mini Study**
+![loss and accuracy curves for three models showing overfitting](./graphs/output_2.png)
 
-First, I saw published means and standard deviations for imagenet32 on the [documentation page for pytorch](https://docs.pytorch.org/vision/0.29/transforms.html). So, I looked up published values for cifar10 and found that. However, these are values that cover the whole dataset. In a real scenario, we wouldn't know the inference values in advance, so I'm not planning to use them in my real model beyond this initial mini study.
-
-**Published means and std devs**
-    cifar10_mean = [0.4914, 0.4822, 0.4465]
-    cifar10_std  = [0.2470, 0.2435, 0.2616]
-
-| Normalizations | Loss<br>after 10 epochs | Train Accuracy<br>after 10 epochs | Test Accuracy<br>after 10 epochs |
-| :--- | :--- | :--- | :--- |
-| None (pixel values 0.0 - 1.0)  | 1.36 | 51.06 | 48.50 |
-| v2.Normalize m = 0.5, std = 0.25         | 0.39 | 86.38 | 50.21 |
-| v2.Normalize m = 0.5, std = 0.50         | 0.49 | 82.73 | 49.51 |
-| v2.Normalize m = published, std = published   | 0.35 | 87.43 | 49.61 |
+## change 15
+![Obs after change 15](./graphs/output_3_change_15.png)
 
 
-**Combine v2.Normalize with other augmentations**
-| Normalized <br>plus other<br>transforms | Loss<br>after 10 epochs | Train Accuracy<br>after 10 epochs | Test Accuracy<br>after 10 epochs |
-| :--- | :--- | :--- | :--- |
-| v2.AutoAugment  | 1.51 | 46.76 | 48.93 |
-| v2.RandomHorizontalFlip         | 0.75 | 73.74 | 51.65 |
-| v2.RandomAffine         | 1.46 | 47.48 | 46.56 |
-| v2.RandomResizeCrop   | 1.62 | 41.82 | 48.53 |
-| v2.RandomResizeCrop<br>and RandomHorizontalFlip   | 1.64 | 40.71 | 47.96 |
-| v2.AutoAugment<br>and RandomHorizontalFlip   | 1.52 | 43.58 | 51.18 |
+#### 2. Data Augmentation - changes 14-16
+
+Apart from addressing overfitting in general, data augmentation seemed to have the biggest impact on
+model accuracy. In Change 14, I began experimenting with different augmentation techniques. I realy
+wanted RandomAffine to work and spent several changes toying with it. Changes #14 - 16 were focued
+nearly entirely on augmentation.
 
 
-*_Label: CIFAR-10 Mini Study_*
+    #### **CIFAR10 Mini Study**
+    When experimenting with Data Augmentation, I ran through many, many combinations of pytorch v2 transforms with various parameters. I spent a little time building a demo notebook so I could visualize what the transforms were actually doing. It's in my repo. Here's what I learned.
 
-*Conclusion of mini study* It appears that the values used in normalization do matter. And it appears that HorizontalFlip alone isn't enough to mitigate overfitting. But it's useful as part of a larger data augmentation strategy. It's not clear to me yet which strategy will yield the best results. Going forward, I'm going to combine RandomHorizontalFlip and AutoAugment as a starting recipe on top of normalization with mean = 0.5, std = 0.25. It doesn't seem to learn quickly, but it mitigates the overfitting problem. I believe I can improve upon it with other techniques.
+    First, I saw published means and standard deviations for imagenet32 on the [documentation page for pytorch](https://docs.pytorch.org/vision/0.29/transforms.html). So, I looked up published values for cifar10 and found them. However, those values are derived from the whole dataset. In a real-world scenario, we wouldn't know the inference values in advance, so I'm not planning to use them in my real model beyond this initial mini study.
+
+    **Published means and std devs**
+        cifar10_mean = [0.4914, 0.4822, 0.4465]
+        cifar10_std  = [0.2470, 0.2435, 0.2616]
+
+    | Normalizations | Loss<br>after 10 epochs | Train Accuracy<br>after 10 epochs | Test Accuracy<br>after 10 epochs |
+    | :--- | :--- | :--- | :--- |
+    | None (pixel values 0.0 - 1.0)  | 1.36 | 51.06 | 48.50 |
+    | v2.Normalize m = 0.5, std = 0.25         | 0.39 | 86.38 | 50.21 |
+    | v2.Normalize m = 0.5, std = 0.50         | 0.49 | 82.73 | 49.51 |
+    | v2.Normalize m = published, std = published   | 0.35 | 87.43 | 49.61 |
+
+
+    **Combine v2.Normalize with other augmentations**
+    | Normalized <br>plus other<br>transforms | Loss<br>after 10 epochs | Train Accuracy<br>after 10 epochs | Test Accuracy<br>after 10 epochs |
+    | :--- | :--- | :--- | :--- |
+    | v2.AutoAugment  | 1.51 | 46.76 | 48.93 |
+    | v2.RandomHorizontalFlip         | 0.75 | 73.74 | 51.65 |
+    | v2.RandomAffine         | 1.46 | 47.48 | 46.56 |
+    | v2.RandomResizeCrop   | 1.62 | 41.82 | 48.53 |
+    | v2.RandomResizeCrop<br>and RandomHorizontalFlip   | 1.64 | 40.71 | 47.96 |
+    | v2.AutoAugment<br>and RandomHorizontalFlip   | 1.52 | 43.58 | 51.18 |
+
+
+    *_Label: CIFAR-10 Mini Study_*
+
+    *Conclusion of mini study* It appears that the values used in normalization do matter. And it appears that HorizontalFlip alone isn't enough to mitigate overfitting. But it's useful as part of a larger data augmentation strategy. It's not clear to me yet which strategy will yield the best results. Going forward, I'm going to combine RandomHorizontalFlip and AutoAugment as a starting recipe on top of normalization with mean = 0.5, std = 0.25. It doesn't seem to learn quickly, but it mitigates the overfitting problem. I believe I can improve upon it with other techniques.
+
+#### 3. Adopting SwiGLU - various changes
+I began switching my networks from regular Residual MLP to SwiGLU after learning about it in class.
+My initial implementation in Change 9 was horrendous because I'd failed to add the residual stream
+back to the backbone. In that case, the test accuracy fell below baseline. I fixed the issue in
+Change 10 and saw accuracy increase back above baseline to 53.27%.
 
 
 
 ### 3. Training dynamics.
-Your ImageNet analysis from the section above: the figures and what they show about how your model trains. In the 5000-level section, this includes your ablation study.
+**Your ImageNet analysis from the section above: the figures and what they show about how your model
+trains. In the 5000-level section, this includes your ablation study.**
 
-### 4. What did not work.
-Describe ideas that failed and your best explanation of why.
-
-RandomAffine augmentation was a bust, at least with my params.
-
-Just making network bigger or adding epochs didn't help much.
-
-### 5. Across the three tasks.
-How and why do your final models differ between MNIST, CIFAR-10, and ImageNet 32×32? What does that tell you about the limits of MLPs on images?
-
-### 6. Explanations of anything beyond the basics.
-For each technique not covered in class, explain how it works and why you used it
-
-
-# Training Dynamics Analysis #
-
-
-## Baseline run after adding telemetry and analytics scripts ##
+#### Baseline run after adding telemetry and analytics scripts ####
 * Running imagenet32 with 60,000 test images.
 * commit 05b7b6d29a
 * Model: ResidualMLP - linear -> ReLU -> linear. output activation: sigmoid
@@ -77,7 +136,7 @@ For each technique not covered in class, explain how it works and why you used i
     * optimizer momentum: 0.9
 * Accuracy: 1.12%
 
-### Notes ###
+#### Notes ####
 First run after adding telemetry script. Just used 60K images for starters.
 
 I see the residual stream growing at the expected rate as a function of depth.
@@ -88,107 +147,102 @@ Branch to stream ratio decreases and gets close to zero in later layers.
 ![imagenet32 output 1b](./graphs/output_1b.png)
 
 
-## Discovered Overfitting
+#### Final run 
+```
+Note: my large diagnostics run failed due to server timeout just before the final training epoch. I'm writing this based on a shorter run, but it doesn't show the full output from the final model. --Clay
+```
+![small diagnostics run p1](./graphs/diagnostics_small_bad.png)
+![small diagnostics run p2](./graphs/diagnostics_small_bad_2.png)
 
-### Observations after change 13, commit #203d56f8
+**Activation Variance** Activation variance appears to be stable throughout the model. I see
+somewhat linear growth across blocks and as training continues, which is expected since we're adding
+variance to the backbone as training continues. The good news is that there's no evidence of
+exploding or vanishing variance.
 
-In change 13, I finally added capability to monitor and plot accuracy and loss
-curves. I had already suspected overfitting based on some previous outputs from
-my mnist model where loss shrank near zero but test accuracy didn't budge. But I
-was very surprised to discover the extent of overfitting, especially in the
-cifar10 model. After 30 epochs with a SwiGLU network depth 30, my training loss
-shrank to 0.02, and training accuracy was over 99%. But test accuracy was still
-a measly 47% and had barely improved since epoch 2. That's a textbook example of
-overfitting.
+**Branch-to-stream ratio** In my test, I see the branch-to-stream ratio drop but not approach zero,
+even in the later blocks. I believe this means I could make the network deeper to yield even better
+learning. It would be nice to eke out the best accuracy possible from the model by adding depth.
 
+**RMS gradient** I don't see any evidence of exploding or vanishing gradients in this network.
+There's a steady decrease over the depth, but I believe that's in line with expectations and
+represents a model that's maintaining proper gradients.
 
-![loss and accuracy curves for three models showing overfitting](./graphs/output_2.png)
+**Update-to-weight ratio** I'm not sure what to make of the update-to-weight ratio for this model.
+It appears to oscillate widly between 10^-2 and 10^-3. A quick Google search says this behavior
+could indicate that the learning rate is too aggressive. However, my AdamW optimizer is initialized
+with a learning rate of 0.001, which seems quite small already. I'd need to study this more.
 
+**Saturation** - there's practically no saturation in this network. I don't have a graph for ReLU
+where saturation and dead neurons are more likely. In this SwiGLU network, it appears almost all
+neurons remain active.
 
-    ============================================================
-    ======================= TASK: MNIST ========================
-    ============================================================
-    Epoch-by-Epoch Results for MNIST
-        Train Loss	Train Acc (%)	Test Loss	Test Acc (%)
-    Epoch 1	0.3712	89.17%	0.1709	95.01%
-    Epoch 2	0.1146	96.56%	0.1124	96.52%
-    Epoch 3	0.0736	97.86%	0.1157	96.47%
-    Epoch 4	0.0506	98.54%	0.1460	95.68%
-    Epoch 5	0.0370	98.92%	0.1178	96.43%
-    Epoch 6	0.0293	99.20%	0.1054	97.07%
-    Epoch 7	0.0199	99.44%	0.1074	97.04%
-    Epoch 8	0.0211	99.46%	0.0916	97.45%
-    Epoch 9	0.0117	99.74%	0.0970	97.45%
-    Epoch 10	0.0065	99.88%	0.1008	97.32%
-    Summary Highlights:
-    • Best Test Accuracy : 97.45% (Epoch 8)
-    • Lowest Test Loss   : 0.0916
-    • Final Train Accuracy: 99.88%
-    • Final Test Accuracy : 97.32%
-
-    ============================================================
-    ====================== TASK: CIFAR10 =======================
-    ============================================================
-    Epoch-by-Epoch Results for CIFAR10
-        Train Loss	Train Acc (%)	Test Loss	Test Acc (%)
-    Epoch 1	1.8286	34.39%	1.6942	39.31%
-    Epoch 2	1.5800	43.20%	1.5682	43.72%
-    Epoch 3	1.4535	48.22%	1.6574	41.80%
-    Epoch 4	1.3572	51.64%	1.5434	45.41%
-    Epoch 5	1.2684	54.75%	1.5485	45.60%
-    Epoch 6	1.1851	57.74%	1.6415	44.57%
-    Epoch 7	1.1039	60.93%	1.5877	47.23%
-    Epoch 8	1.0230	63.83%	1.6101	46.62%
-    Epoch 9	0.9455	66.79%	1.7496	44.11%
-    Epoch 10	0.8628	69.85%	1.7388	46.35%
-    Epoch 11	0.7880	72.40%	1.8127	45.08%
-    Epoch 12	0.7041	75.45%	1.9517	45.42%
-    Epoch 13	0.6310	78.21%	1.9600	46.26%
-    Epoch 14	0.5696	80.36%	2.1125	45.33%
-    Epoch 15	0.5010	82.83%	2.2307	45.19%
-    Epoch 16	0.4377	84.85%	2.3099	46.69%
-    Epoch 17	0.3862	86.54%	2.5077	44.20%
-    Epoch 18	0.3212	89.16%	2.6390	44.29%
-    Epoch 19	0.2919	90.09%	2.6966	46.33%
-    Epoch 20	0.2527	91.47%	2.8743	44.59%
-    Epoch 21	0.2223	92.51%	2.9188	45.92%
-    Epoch 22	0.2011	93.11%	3.0310	45.64%
-    Epoch 23	0.1781	93.98%	3.1315	47.04%
-    Epoch 24	0.1426	95.36%	3.2304	46.95%
-    Epoch 25	0.1316	95.64%	3.5160	44.92%
-    Epoch 26	0.1270	95.80%	3.4529	46.20%
-    Epoch 27	0.0735	97.79%	3.7397	44.93%
-    Epoch 28	0.0505	98.53%	3.6893	46.57%
-    Epoch 29	0.0336	99.12%	3.7214	47.41%
-    Epoch 30	0.0202	99.47%	3.8441	47.13%
-    Summary Highlights:
-    • Best Test Accuracy : 47.41% (Epoch 29)
-    • Lowest Test Loss   : 1.5434
-    • Final Train Accuracy: 99.47%
-    • Final Test Accuracy : 47.13%
-
-    ============================================================
-    ===================== TASK: IMAGENET32 =====================
-    ============================================================
-    Epoch-by-Epoch Results for IMAGENET32
-        Train Loss	Train Acc (%)	Test Loss	Test Acc (%)
-    Epoch 1	6.3518	1.80%	6.0979	2.87%
-    Epoch 2	5.9042	3.92%	5.8896	4.07%
-    Epoch 3	5.7427	5.01%	5.8040	4.78%
-    Epoch 4	5.6320	5.81%	5.7160	5.40%
-    Epoch 5	5.5407	6.51%	5.6616	5.83%
-    Epoch 6	5.4613	7.18%	5.6067	6.39%
-    Epoch 7	5.3913	7.75%	5.5636	6.78%
-    Epoch 8	5.3288	8.26%	5.5346	6.89%
-    Epoch 9	5.2719	8.76%	5.4965	7.16%
-    Epoch 10	5.2191	9.27%	5.4727	7.44%
-    Summary Highlights:
-    • Best Test Accuracy : 7.44% (Epoch 10)
-    • Lowest Test Loss   : 5.4727
-    • Final Train Accuracy: 9.27%
-    • Final Test Accuracy : 7.44%
+**Ablation Study** In the small run of 60k training images and 5 epochs, the branch ablation study
+is not readable. I believe there must be a bug in my ablation code. I'm not able to complete this
+part of the assignment until the larger diagnostics run concludes.
 
 
 
-## change 15
-![Obs after change 15](./graphs/output_3_change_15.png)
+### 4. What did not work.
+**Describe ideas that failed and your best explanation of why.**
+
+#### Bigger not always better
+I tried various combinations of enormous width and depth, but they had minimal impact on test
+accuracy. Often it just led to slower training. 
+
+#### Data Augmentation is an art
+RandomAffine augmentation was a bust, at least with my params. I also tried various scaling and
+rotation transforms when running cifar10. I believe there's a lot of value in the built-in pytorch
+v2 transforms, but it was a struggle to unlock the best possible combination. I finally settled on
+AutoAugment with RandomHorizontalFlip for both imagenet and cifar. 
+
+
+### 5. Across the three tasks.
+**How and why do your final models differ between MNIST, CIFAR-10, and ImageNet 32×32? What does
+that tell you about the limits of MLPs on images?**
+
+Mnist is a simple enough task that it's hard to do incorrectly. I initially spent the first few
+changes of my project checking the baseline model and comparing it to a single-layer FFN as Dr.
+Roberts described in the notes. I confirmed that even a very simple FFN with just one hidden layer
+could exceed 97% accuracy. Once I was satisfied with that, I restored MNIST as a residual MLP. On
+the day we talked about GELU and SwiGLU in class, I decided to make all three of the tasks use
+SwiGLU since that seems to be a network commonly used in industry. I kept that for mnist. 
+
+For both MNIST and CIFAR10, overfitting is a problem. A careful application of data augmentation
+helped with that as I was able to use 30-deep SwiGLU blocks without harming testing too much. I kept
+MNIST and CIFAR10 as 30-deep networks in the final models.
+
+IMAGENET32 and CIFAR10 both used very similar data augmentation. Both had AutoAugment policies
+built-in to PyTorch, and I made use of that in addition to Horizontal Flip. For both networks, I
+kept width at 128 and hidden at 256 for the final models.
+
+Even in the final models, CIFAR10 began exhibiting memorization behaviors around epoch 20 where
+training loss continued to drop quickly but test accuracy plateaued. Fortunately, I didn't see test
+accuracy deteriorate beyond that, so I kept training for 30 epochs.
+
+The main difference in IMAGENET32 compared to CIFAR was the additional depth. In the final model, I
+pushed IMAGENET32 to a depth of 120 and still didn't see overfitting emerge.
+
+#### training curves for Cifar10 Baseline vs Cifar10 Final
+
+
+### 6. Explanations of anything beyond the basics.
+**For each technique not covered in class, explain how it works and why you used it**
+
+I mainly stuck to techniques covered in class. I do wish I could've gone further but ran out of time.
+
+In a future project, I'd like to experiment more with these other buiding blocks:
+* GELU
+* batch norm
+* dropout
+* label smoothing
+* splitting image into patches
+
+
+
+
+
+
+
+
+
+

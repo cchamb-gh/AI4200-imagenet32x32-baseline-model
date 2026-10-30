@@ -3,6 +3,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+####
+#### NOTE: this is deprecated. Leaving intact for posterity but not in use by final model
+####
 class MNIST_FC_Layer(nn.Module):
     """ One simple, fully connected hidden layer with a tanh activation.
     

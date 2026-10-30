@@ -17,7 +17,7 @@ TASKS = {
                    "width": 128, "hidden": 256, "depth": 90},
 }
 
-
+#### Note: Block is unused in the final networks. Leaving intact for posterity.
 class Block(nn.Module):
     """One residual block:  x + Linear(tanh(Linear(LayerNorm(x))))
 
@@ -50,7 +50,7 @@ class Block(nn.Module):
         
         return x + branch                          # skip connection: add the input back
 
-
+#### Note: ResidualMLP is unused in the final networks. Leaving intact for posterity.
 class ResidualMLP(nn.Module):
     """Baseline residual MLP.
 

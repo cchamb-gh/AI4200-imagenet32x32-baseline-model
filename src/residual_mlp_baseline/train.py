@@ -22,6 +22,9 @@ EPOCHS = {"mnist": 15, "cifar10": 30, "imagenet32": 30}
 
 
 def get_transforms(task):
+    """
+    Return a composed set of transform functions appropriate for the given task.
+    """
     if task == "mnist":
         train_transform = v2.Compose([
             v2.RandomResizedCrop(size=(28, 28), scale=(0.95, 1.05), antialias=True),
@@ -63,6 +66,9 @@ def format_tensor(X):
     return X_tensor
 
 def create_model_for_task(task):
+    """ Create a model appropriate for the task.
+    Note: I just used SwiGLU everywhere, so there's no branching logic here.
+    """
     model = SwiGLUNetwork(**TASKS[task], task_name=task)
     return model
 
@@ -88,10 +94,11 @@ def train_epoch(model, loader, loss_fn, optimizer, scheduler, transform, device)
         total += y_batch.size(0)
         correct += predicted.eq(y_batch).sum().item()
 
+    # scheduler will adjust the learning rate as it goes
     scheduler.step()
 
     current_lr = scheduler.get_last_lr()[0]
-    print(f'current learning rate: {current_lr:.3e}')
+    #print(f'current learning rate: {current_lr:.3e}')
     
     epoch_loss = total_loss / total
     epoch_acc = 100 * correct / total
@@ -195,11 +202,10 @@ def train(task, X_train, y_train, seed=0, device="cuda"):
     """Original interface. Unchanged signature, returns only `model`."""
     return _train_internal(task, X_train, y_train, seed=seed, device=device, eval_data=None)
 
-# ---------------------------------------------------------------------------
-# 3. NEW WRAPPER FUNCTION (Passes test set & returns model + history)
-# ---------------------------------------------------------------------------
 def train_and_evaluate(task, X_train, y_train, X_test, y_test, seed=0, device="cuda"):
-    """New interface for running training with continuous test logging."""
+    """ wrapper function for training and evaluating
+    """
+    
     return _train_internal(
         task, 
         X_train, 

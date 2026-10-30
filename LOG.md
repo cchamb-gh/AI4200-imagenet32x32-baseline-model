@@ -520,7 +520,7 @@ the extra computation time.
 
 
 
-### Change 22 - final recipe for cifar10 and imagenet32 - 2026-10-29 - #
+### Change 22 - final recipe for cifar10 and imagenet32 - 2026-10-29 - #4dbf9fba
 
 **Change:** choose best performing options from earlier results by using different depth, width, and
 hidden values for cifar10 and imagenet32
@@ -535,4 +535,9 @@ width, 256 hidden, and 30 depth. Imagenet should improve with the additional dep
 epochs. I'd love to see it get above 12% for this final run.
 
 **Result:**
-
+cifar10 did go back above 58% as hoped. But I'm surprised imagenet32 didn't get any better with more training. It only climbed to 10.24%, which is hardly any improvement to have spent twice as long training.
+```
+2026-10-29 23:12,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,mnist,0.9894,1.2,0
+2026-10-29 23:17,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5883,5.1,0
+2026-10-30 00:00,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.1024,42.2,0
+```
