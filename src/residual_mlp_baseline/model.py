@@ -11,10 +11,10 @@ TASKS = {
                    "width": 128, "hidden": 256, "depth": 30},
     
     "cifar10":    {"in_features": 3 * 32 * 32, "num_classes": 10,    # 32x32 color
-                   "width": 512, "hidden": 512, "depth": 30},
+                   "width": 128, "hidden": 128, "depth": 90},
     
     "imagenet32": {"in_features": 3 * 32 * 32, "num_classes": 1000,  # 32x32 color
-                   "width": 512, "hidden": 512, "depth": 30},
+                   "width": 128, "hidden": 128, "depth": 90},
 }
 
 

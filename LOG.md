@@ -471,7 +471,7 @@ That's a 2% gain from the previous run. It's only training for 10 epochs, so we 
 with it if extended to 30 epochs, though.
 
 
-### Change 20 - going wide with cifar10 and imagenet32 - 2026-10-29 - #
+### Change 20 - going wide with cifar10 and imagenet32 - 2026-10-29 - #7dd4aa79
 
 **Change:** increase width and hidden nodes of the cifar10 and imagenet32 models to 512. That should
 give more capacity for learning.
@@ -485,7 +485,25 @@ I realize there's risk of diminishing returns and slower performance. And to som
 reintroduces the liklihood of memorization since there are more parameters within the model. I'll
 need to keep an eye out for overfitting. Training will take two or three times longer, too.
 
+**Result:** minimal impact. I'm surprised. The accuracy values changed hardly at all, and training
+time was only very slightly higher. Seeing no improvement, I'll revert this change since it's just
+adding (some small) overhead with no benefit.
+
+
+### Change 21 - going deep with cifar10 and imagenet32 - 2026-10-29 - #
+
+**Change:** increase depth from 30 to 90 SwiGLU blocks.
+
+**Why:** with a residual MLP, we should be able to maintain variance deep into the network well
+beyond 30 layers. Let's see if the result matches the theory. However, before running, I'll revert
+the previous width change back to 128 for width and hidden. 
+
+**Expected:** I expect this could improve testing accuracy by a couple of points for cifar10 and
+imagenet32. Adding depth allows for more coordination between layers, so it's possible the model
+will learn to 'see' features that a more shallow model cannot.
+
 **Result:**
+
 
 
 
