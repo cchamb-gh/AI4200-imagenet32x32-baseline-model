@@ -442,20 +442,50 @@ imagenet32 was slightly better with 8.13% to 8.39%.
 jumping over minima, especially in the later stages of training. AdamW should avoid some of that by
 supporting weight decay and normalizing the step sizes.
 
-**Result:** imagenet32 had 8.52% test accuracy. cifar10 had 57.17% test accuracy. Both of those are the highest recent scores for me since adopting SwiGLU and data augmentation. 
+**Result:** imagenet32 had 8.52% test accuracy. cifar10 had 57.17% test accuracy. Both of those are
+the highest recent scores for me since adopting SwiGLU and data augmentation. 
 
 So, at least for cifar10, the scheduler increased test accuracy by 2%+, which is a nice boost.
 
 
-### Change 19 - Add scheduler to optimizer - 2026-10-29 - #
+### Change 19 - Add scheduler to optimizer - 2026-10-29 - #6065da587
 
-**Change:** Add a scheduler to my AdamW optimizer to avoid doing too much, too early. Also, I'm going to sneak in some augmentation for mnist and bump its number of epochs from 5 to 15. I'm not actively trying to improve mnist currently, but I'll keep making little tweaks on the backburner.
+**Change:** Add a scheduler to my AdamW optimizer to avoid doing too much, too early. Also, I'm
+going to sneak in some augmentation for mnist and bump its number of epochs from 5 to 15. I'm not
+actively trying to improve mnist currently, but I'll keep making little tweaks on the backburner.
 
-**Why:** The scheduler will keep the weights from decaying too early in my training cycle. Since AdamW uses weighted averages, it helps to give it a warm up period in the early epochs before making changes in the later epochs.
+**Why:** The scheduler will keep the weights from decaying too early in my training cycle. Since
+AdamW uses weighted averages, it helps to give it a warm up period in the early epochs before making
+changes in the later epochs.
 
-**Expected:** Once again, I think this is fine tuning. At this point, I don't expect large swings in any direction. Perhaps another small bump in test accuracy. I'll be looking for changes in loss and accuracy curves with the scheduler. It sounds like it will defer making large weight adjustments until its warmed up, which means the curves won't change as drastically early but will hopefully yield better results in late epochs.
+**Expected:** Once again, I think this is fine tuning. At this point, I don't expect large swings in
+any direction. Perhaps another small bump in test accuracy. I'll be looking for changes in loss and
+accuracy curves with the scheduler. It sounds like it will defer making large weight adjustments
+until its warmed up, which means the curves won't change as drastically early but will hopefully
+yield better results in late epochs.
 
-**Result:** 
+**Result:** Mixed bag. Not exactly what I expected. It appears that cifar10 fell into memorization
+again based on the loss and accuracy curves. Final test accuracy for cifar10 went up very slightly,
+but the graphs show overfitting. Meanwhile, imagenet32 test accuracy was the best ever with 10.54%.
+That's a 2% gain from the previous run. It's only training for 10 epochs, so we may see overfitting
+with it if extended to 30 epochs, though.
+
+
+### Change 20 - going wide with cifar10 and imagenet32 - 2026-10-29 - #
+
+**Change:** increase width and hidden nodes of the cifar10 and imagenet32 models to 512. That should
+give more capacity for learning.
+
+**Why:** I've configured the model and training regimen as well as I can while keeping it nimble.
+I'm hoping now that overfitting has been addressed, I can increase the performance of the model by
+making it wider so that there can be more specialization within layers.
+
+**Expected:** I believe model performance will improve, but I don't expect a large change. However,
+I realize there's risk of diminishing returns and slower performance. And to some extent, it
+reintroduces the liklihood of memorization since there are more parameters within the model. I'll
+need to keep an eye out for overfitting. Training will take two or three times longer, too.
+
+**Result:**
 
 
 
