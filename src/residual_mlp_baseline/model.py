@@ -14,7 +14,7 @@ TASKS = {
                    "width": 128, "hidden": 256, "depth": 30},
     
     "imagenet32": {"in_features": 3 * 32 * 32, "num_classes": 1000,  # 32x32 color
-                   "width": 128, "hidden": 256, "depth": 120},
+                   "width": 128, "hidden": 256, "depth": 90},
 }
 
 
