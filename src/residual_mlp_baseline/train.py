@@ -63,12 +63,11 @@ def format_tensor(X):
     return X_tensor
 
 def create_model_for_task(task):
-    #model = ResidualMLP(**TASKS[task])
     model = SwiGLUNetwork(**TASKS[task], task_name=task)
     return model
 
 
-def train_epoch(model, loader, loss_fn, optimizer, transform, device):
+def train_epoch(model, loader, loss_fn, optimizer, scheduler, transform, device):
     model.train()
     total_loss = 0.0
     correct = 0
@@ -88,6 +87,12 @@ def train_epoch(model, loader, loss_fn, optimizer, transform, device):
         _, predicted = logits.max(1)
         total += y_batch.size(0)
         correct += predicted.eq(y_batch).sum().item()
+
+    scheduler.step()
+
+    current_lr = scheduler.get_last_lr()[0]
+    print(f'current learning rate: {current_lr:.3e}')
+    
     epoch_loss = total_loss / total
     epoch_acc = 100 * correct / total
     
@@ -151,7 +156,7 @@ def _train_internal(task, X_train, y_train, seed=0, device="cuda", eval_data=Non
     }
 
     for i in range(1, EPOCHS[task] + 1):
-        train_loss, train_acc = train_epoch(model, loader, loss_fn, optimizer, train_transform, device)
+        train_loss, train_acc = train_epoch(model, loader, loss_fn, optimizer, scheduler, train_transform, device)
         history["train_loss"].append(train_loss)
         history["train_acc"].append(train_acc)
 
