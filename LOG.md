@@ -535,9 +535,24 @@ width, 256 hidden, and 30 depth. Imagenet should improve with the additional dep
 epochs. I'd love to see it get above 12% for this final run.
 
 **Result:**
-cifar10 did go back above 58% as hoped. But I'm surprised imagenet32 didn't get any better with more training. It only climbed to 10.24%, which is hardly any improvement to have spent twice as long training.
+cifar10 did go back above 58% as hoped. But I'm surprised imagenet32 didn't get any better with more
+training. It only climbed to 10.24%, which is hardly any improvement to have spent twice as long
+training.
 ```
 2026-10-29 23:12,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,mnist,0.9894,1.2,0
 2026-10-29 23:17,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,cifar10,0.5883,5.1,0
 2026-10-30 00:00,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.1024,42.2,0
 ```
+
+### Change 23 - fix diagnostics for ablation study - 2026-10-31
+
+**Change:** Fix ablation study code in diagnostics.ipynb
+
+**Why:** The previous code was broken and giving nonsensical results. I had to find and fix the bug,
+which was a failure to run the eval batch through the data augmentation transformation. That was
+causing the ablation study to be run with unscaled data, which was giving near zero accuracy
+everywhere.
+
+**Expected:** The diagnostics.ipynb should run now and give a more meaningful graph.
+
+**Result:**
