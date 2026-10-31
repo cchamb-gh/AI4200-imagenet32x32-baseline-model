@@ -223,7 +223,8 @@ The main difference in IMAGENET32 compared to CIFAR was the additional depth. In
 pushed IMAGENET32 to a depth of 120 and still didn't see overfitting emerge.
 
 #### training curves for Cifar10 Baseline vs Cifar10 Final
-
+![baseline training curve for cifar10](./graphs/cifar_curves_baseline.png)
+![final training curve for cifar10](./graphs/cifar_curves_final.png)
 
 ### 6. Explanations of anything beyond the basics.
 **For each technique not covered in class, explain how it works and why you used it**
