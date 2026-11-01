@@ -122,63 +122,28 @@ Change 10 and saw accuracy increase back above baseline to 53.27%.
 **Your ImageNet analysis from the section above: the figures and what they show about how your model
 trains. In the 5000-level section, this includes your ablation study.**
 
-#### Baseline run after adding telemetry and analytics scripts ####
-* Running imagenet32 with 60,000 test images.
-* commit 05b7b6d29a
-* Model: ResidualMLP - linear -> ReLU -> linear. output activation: sigmoid
-    * Width: 128
-    * Hidden: 256
-    * Depth: 30
-* Training Regimen
-    * Epochs: 5
-    * batch size: 256
-    * learning rate: 0.05
-    * optimizer momentum: 0.9
-* Accuracy: 1.12%
-
-#### Notes ####
-First run after adding telemetry script. Just used 60K images for starters.
-
-I see the residual stream growing at the expected rate as a function of depth.
-
-Branch to stream ratio decreases and gets close to zero in later layers.
-
-![imagenet32 output 1a](./graphs/output_1a.png)
-![imagenet32 output 1b](./graphs/output_1b.png)
-
-
-#### Final run 
-```
-Note: my large diagnostics run failed due to server timeout just before the final training epoch. I'm writing this based on a shorter run, but it doesn't show the full output from the final model. --Clay
-```
-![small diagnostics run p1](./graphs/diagnostics_small_bad.png)
-![small diagnostics run p2](./graphs/diagnostics_small_bad_2.png)
+![imagenet32 diagnostics 1](./graphs/diagnostics_final_1.png)
+![imagenet32 diagnostics 2](./graphs/diagnostics_final_2.png)
 
 **Activation Variance** Activation variance appears to be stable throughout the model. I see
 somewhat linear growth across blocks and as training continues, which is expected since we're adding
-variance to the backbone as training continues. The good news is that there's no evidence of
+variance to the backbone through the blocks. The good news is that there's no evidence of
 exploding or vanishing variance.
 
-**Branch-to-stream ratio** In my test, I see the branch-to-stream ratio drop but not approach zero,
-even in the later blocks. I believe this means I could make the network deeper to yield even better
-learning. It would be nice to eke out the best accuracy possible from the model by adding depth.
+**Branch-to-stream ratio** In my 30-epoch diagnostic run, I see the branch-to-stream ratio diminish overall in later epochs. However, in mid and late epochs, it appears the ratio remains mostly flat throughout the blocks. Some of the later blocks (blocks 80 - 90) actually have a higher ratio than the middle blocks. Although the ratio was small, it was enough that the network continued to learn at depth 90. It's possible going even deeper could eke out a little bit of improvement.
 
 **RMS gradient** I don't see any evidence of exploding or vanishing gradients in this network.
-There's a steady decrease over the depth, but I believe that's in line with expectations and
-represents a model that's maintaining proper gradients.
+There's a steady decrease over the depth in each of the sampled epochs, but it's in line with normal network behavior. It's maintaining a healthy gradient throughout the depth, which tells me the residual connection and normalization is working. 
 
-**Update-to-weight ratio** I'm not sure what to make of the update-to-weight ratio for this model.
-It appears to oscillate widly between 10^-2 and 10^-3. A quick Google search says this behavior
+**Update-to-weight ratio** I'm not sure what to make of the update-to-weight ratio graph for this model. It's difficult to read. I believe with the SWiGLU layers (up, down, gate) all being graphed together, it's difficult to read. There's wild oscillation between a ratio of 10^-2 and 10^-3. A quick Google search says this behavior
 could indicate that the learning rate is too aggressive. However, my AdamW optimizer is initialized
-with a learning rate of 0.001, which seems quite small already. I'd need to study this more.
+with a learning rate of 0.001, which seems quite small already. I'd need to study this more in future work.
 
-**Saturation** - there's practically no saturation in this network. I don't have a graph for ReLU
-where saturation and dead neurons are more likely. In this SwiGLU network, it appears almost all
-neurons remain active.
+**Saturation** - there's practically no saturation in this network, which is a nice perk of using a SwiGLU network. Neurons are much less likely to die and can self-recover. I don't have a graph for ReLU for comparison, but in this network, dead or saturated neurons are not a problem. 
 
-**Ablation Study** In the small run of 60k training images and 5 epochs, the branch ablation study
-is not readable. I believe there must be a bug in my ablation code. I'm not able to complete this
-part of the assignment until the larger diagnostics run concludes.
+**Ablation Study** My SwiGLU imagenet32 network has a depth of 90 blocks. The ablation study shows that many layers throughtout the depth are contributing to the accuracy of the model. There's a slight concentration of improvment within the first 15 blocks, but I see continued incremental improvements of 0.5% to 1.5% interspersed with less-frequent accuracy regressions throughout the depth of the network. This tells me that the network's depth is providing some value, and it's possible an even deeper network could further improve accuracy.
+
+I ran the same abalation code on the cifar10 dataset, and it showed a different result. The bulk of improvement happened in the first 20 blocks with the later blocks contributing relatively little. But with the imagenet32 dataset, it appears that the deep blocks play a relatively more important role than they did in cifar10.
 
 
 
@@ -194,6 +159,21 @@ RandomAffine augmentation was a bust, at least with my params. I also tried vari
 rotation transforms when running cifar10. I believe there's a lot of value in the built-in pytorch
 v2 transforms, but it was a struggle to unlock the best possible combination. I finally settled on
 AutoAugment with RandomHorizontalFlip for both imagenet and cifar. 
+
+#### In general, regular old bugs cost time. 
+As I'm learning Deep Learning, and no matter how long I've been coding, bugs still creep into my
+code. I had a couple of particularly annoying bugs that cost me a lot of time. First, I simply
+failed to add the residual value back to the backbone when I was first implementing SwiGLU blocks.
+That caused the variance stream to disappear and stopped learning. That was before I'd added my
+telemetry code, so it wasn't immediately obvious that the network wasn't learning. It cost me
+several hours to debug.
+
+The second major bug caused me to turn in my analysis a day late. In my diagnostics notebook, I had
+failed to run the data augmentation step, which is where I handle the scaling and standardization of
+the inputs. So, during the ablation study, I was feeding the network very large values, which caused
+accuracy to be nearly zero and rendered the ablation steps meaningless. To have only found the issue
+after hours+ of training the network, it was a frustrating setback that delayed making progress on
+other network improvements.
 
 
 ### 5. Across the three tasks.
@@ -222,9 +202,19 @@ accuracy deteriorate beyond that, so I kept training for 30 epochs.
 The main difference in IMAGENET32 compared to CIFAR was the additional depth. In the final model, I
 pushed IMAGENET32 to a depth of 120 and still didn't see overfitting emerge.
 
-#### training curves for Cifar10 Baseline vs Cifar10 Final
-![baseline training curve for cifar10](./graphs/cifar_curves_baseline.png)
-![final training curve for cifar10](./graphs/cifar_curves_final.png)
+### training curves for Cifar10 Baseline vs Cifar10 Final
+
+**Compare CIFAR10 Loss Curves - Baseline vs. Final**
+
+![cifar loss baseline v final](./graphs/cifar_loss_baseline_final_train.png)
+
+Despite the baseline model appearing to converge more quickly, it's actually overfitting and does not perform as well as the final model. 
+
+**CIFAR10 Final Loss and Accuracy Curves**
+
+![cifar accuracy final](./graphs/cifar_accuracy_final_test_train.png)
+
+![cifar loss final](./graphs/cifar_loss_final_test_train.png)
 
 ### 6. Explanations of anything beyond the basics.
 **For each technique not covered in class, explain how it works and why you used it**

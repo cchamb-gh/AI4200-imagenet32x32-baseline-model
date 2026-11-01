@@ -544,7 +544,7 @@ training.
 2026-10-30 00:00,git+https://github.com/cchamb-gh/AI4200-imagenet32x32-baseline-model.git,residual_mlp_baseline,imagenet32,0.1024,42.2,0
 ```
 
-### Change 23 - fix diagnostics for ablation study - 2026-10-31
+### Change 23 - fix diagnostics for ablation study - 2026-10-31 - #9ee2def5
 
 **Change:** Fix ablation study code in diagnostics.ipynb
 
@@ -555,4 +555,4 @@ everywhere.
 
 **Expected:** The diagnostics.ipynb should run now and give a more meaningful graph.
 
-**Result:**
+**Result:** Success! Graph looks better. Writing final analysis.
